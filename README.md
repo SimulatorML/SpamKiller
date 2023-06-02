@@ -1,6 +1,5 @@
-<<<<<<< HEAD
 # SpamKiller
-=======
+
 # О чем проект?
 Проблема спама в больших чатах является распространенной. Спам затрудняет общение между людьми, поиск нужной информации, что в конечном итоге может привести к тому, что люди начнут покидать чат, потому что находиться в нем будет невозможно из-за обилия спама.
 
@@ -19,4 +18,3 @@
 
 # Главные инструменты используемые в проекте
 ![Pyhon](https://img.shields.io/badge/-Python_3.8.15-090909?style=for-the-badge&logo=python) ![Aiogram](https://img.shields.io/badge/-Aiogram_2.25.1-090909?style=for-the-badge&logo=Aiogram)       ![Pandas](https://img.shields.io/badge/-pandas_1.3.0-090909?style=for-the-badge&logo=pandas) ![Numpy](https://img.shields.io/badge/-Numpy_1.21.1-090909?style=for-the-badge&logo=Numpy) ![Loguru](https://img.shields.io/badge/-Loguru_1.6.1-090909?style=for-the-badge&logo=xgboost) ![Pylint](https://img.shields.io/badge/-Pylint_2.10.0-090909?style=for-the-badge&logo=Pylint)
->>>>>>> 1f1e847 (start working on the project)
