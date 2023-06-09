@@ -1,22 +1,23 @@
-<<<<<<< HEAD
 # SpamKiller
-=======
-# О чем проект?
-Проблема спама в больших чатах является распространенной. Спам затрудняет общение между людьми, поиск нужной информации, что в конечном итоге может привести к тому, что люди начнут покидать чат, потому что находиться в нем будет невозможно из-за обилия спама.
-
-Избавившись от спама в чате, мы сможем сделать общение между людьми более комфортным, потому что неприятно переписываться в чате или искать информацию и часто натыкаться на мошенническую информацию о скидках в размере 90% и т.д.
-
-В целом, цель данного проекта - свести количество спама к минимуму, освободить администраторов от рутинного просмотра чата на предмет спама, круглосуточного мониторинга чата ботом, своевременного принятия решения о блокировке пользователя и удалении спама.
-
-# Как работает бот?
-В данной версии бота используется примитивная модель на эвристических правилах. Это обоснованно тем, чтобы начать с простого и шаг за шагом усложнять модель и понять стоит ли тратить человеческие ресурсы на разработку более сложной модели, когда более простая модель может справляться с задачей.
-
-# Структура проекта
-В данном проекте используется следующая структура:
-модуль `src`: содержит в себе основной код проекта, а именно:
-`app.py` - основной файл, в котором происходит запуск бота; `add_new_user_id.py` - добавление нового пользователя во временный файл .json, пользователь будет находиться в нем до тех пор пока не отошлет своё первое сообщение в чат; `read_message.py` - чтение самого первого сообщение оставленного только что добавленным пользователем и проверка его на спам, с дальнейшим сообщением администратору чата, если сообщение распознано как спам; `json_to_csv.py` - файл отвечающий за экстракцию текста из .json-файла, в котором лежит экспортированная история чата со спамом и без спама с последующей переводом в .csv-таблицу; `clean_text.py` - в данном файле происходит очистка текста для замеров качества модели и предоставление образцов спама для детекции ботом.
 
 
-# Главные инструменты используемые в проекте
+# What is the project about?
+The problem of spam in large chats is common. Spam makes it difficult to communicate between people, search for the right information, which may eventually lead to people starting to leave the chat, because it will be impossible to be in it because of the abundance of spam.
+
+By getting rid of spam in the chat, we will be able to make communication between people more comfortable, because it is unpleasant to correspond in the chat or search for information and often stumble upon fraudulent information about discounts of 90%, etc.
+
+In general, the goal of this project is to reduce the amount of spam to a minimum, free administrators from routine viewing of the chat for spam, round-the-clock monitoring of the chat by a bot, timely decision-making on blocking the user and deleting spam.
+
+
+# How does the bot work?
+This version of the bot uses a primitive model based on heuristic rules. This is justified in order to start with a simple one and complicate the model step by step and understand whether it is worth spending human resources on developing a more complex model when a simpler model can cope with the task.
+
+
+# Project structure
+The following structure is used in this project
+: the `src` module: contains the main code of the project, namely:
+`app.py ` - the main file in which the bot is launched; `add_new_user_id.py ` - adding a new user to a temporary file.json, the user will stay in it until he sends his first message to the chat; `read_message.py ` - reading the very first message left by the newly added user and checking it for spam, with a further message to the chat administrator if the message is recognized as spam; `json_to_csv.py ` is the file responsible for extracting text from .a json file containing the exported chat history with and without spam, followed by translation into a .csv table; `clean_text.py ` - in this file, the text is cleared for measuring the quality of the model and providing spam samples for detection by the bot.
+
+
+# The main tools used in the project
 ![Pyhon](https://img.shields.io/badge/-Python_3.8.15-090909?style=for-the-badge&logo=python) ![Aiogram](https://img.shields.io/badge/-Aiogram_2.25.1-090909?style=for-the-badge&logo=Aiogram)       ![Pandas](https://img.shields.io/badge/-pandas_1.3.0-090909?style=for-the-badge&logo=pandas) ![Numpy](https://img.shields.io/badge/-Numpy_1.21.1-090909?style=for-the-badge&logo=Numpy) ![Loguru](https://img.shields.io/badge/-Loguru_1.6.1-090909?style=for-the-badge&logo=xgboost) ![Pylint](https://img.shields.io/badge/-Pylint_2.10.0-090909?style=for-the-badge&logo=Pylint)
->>>>>>> 1f1e847 (start working on the project)

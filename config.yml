@@ -1,0 +1,3 @@
+cleaned_spam: data/text_spam_dataset/cleaned_spam.csv
+clened_not_spam: data/text_spam_dataset/cleaned_not_spam.csv
+df_cleaned_spam_and_not_spam: data/text_spam_dataset/cleaned_spam_and_not_spam.csv
