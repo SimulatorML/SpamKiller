@@ -52,7 +52,6 @@ def recall_at_precision(
     metric = recall[mask].max()
     return metric
 
-
 def recall_at_specificity(
     true_labels: np.ndarray,
     pred_scores: np.ndarray,
@@ -77,7 +76,6 @@ def recall_at_specificity(
         return 0.0
     metric = tpr[index]
     return metric
-
 
 def bootstrap_metric(
     metric: Callable,
@@ -138,7 +136,6 @@ def curves(true_labels: np.ndarray, pred_scores: np.ndarray) -> Tuple[np.ndarray
     Returns:
         Tuple[np.ndarray]: ROC and FPR curves
     """
-
     def fig2numpy(fig: Any) -> np.ndarray:
         fig.canvas.draw()
         img = fig.canvas.buffer_rgba()
