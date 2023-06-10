@@ -13,48 +13,13 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from tqdm.notebook import tqdm
 
-<<<<<<< HEAD
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("MetricsCalculator")
-=======
-
-def binary_search_last_greater(arr, value) -> int:
-    """Calculates the last value which >= value
->>>>>>> 82db8101a92df78bdb3f674bbfef7acf6c141ece
 
 
 class Metrics:
     """
-<<<<<<< HEAD
     Class for calculating evaluation metrics for classification models.
-=======
-    left, right = 0, len(arr) - 1
-    result = -1
-    while left <= right:  # до тех пор пока индексы не сошлись
-        mid = left + (right - left) // 2  # находим средний индекс
-        if arr[mid] >= value:  # если значение больше или равно таргету
-            result = mid  # индекс становить равен среднему
-            left = mid + 1  # левый индекс становиться средний плюс один
-        else:
-            right = mid - 1  # правый индекс становиться средний минус один
-    return result
-
-
-def recall_at_precision(
-    true_labels: np.ndarray,
-    pred_scores: np.ndarray,
-    min_precision: float = 0.95,
-) -> float:
-    """Compute recall at precision
-
-    Args:
-        true_labels (np.ndarray): True labels
-        pred_scores (np.ndarray): Target scores
-        min_precision (float, optional): Min precision for recall. Defaults to 0.95.
-
-    Returns:
-        float: Metric value
->>>>>>> 82db8101a92df78bdb3f674bbfef7acf6c141ece
     """
 
     @staticmethod
@@ -81,7 +46,6 @@ def recall_at_precision(
             n_bootstraps (int, optional): Number of bootstrap samples for confidence interval estimation. Defaults to 10000.
             verbose (bool, optional): Enable/disable progress bar. Defaults to False.
 
-<<<<<<< HEAD
         Returns:
             None
         """
@@ -200,31 +164,6 @@ def recall_at_precision(
         verbose: bool = False,
     ) -> Tuple[float, float]:
         """Returns confidence bounds of the metric
-=======
-    Returns:
-        float: Metric value
-    """
-    fpr, tpr, _ = roc_curve(true_labels, pred_scores, drop_intermediate=False)
-    specificity = 1 - fpr
-    index = binary_search_last_greater(
-        specificity, min_specificity
-    )  # используем бинарный поиск для поиска последнего элемента
-    if index == -1:  # если индекс не нашелся, возвращаем ноль
-        return 0.0
-    metric = tpr[index]
-    return metric
-
-def bootstrap_metric(
-    metric: Callable,
-    label: np.ndarray,
-    probability: np.ndarray,
-    min_value: float = 0.95,
-    conf: float = 0.95,
-    n_bootstraps: int = 10000,
-    verbose: bool = False,
-) -> Tuple[float, float]:
-    """Returns confidence bounds of the metric
->>>>>>> 82db8101a92df78bdb3f674bbfef7acf6c141ece
 
         Args:
             metric (function): Function for bootstrap
@@ -235,7 +174,6 @@ def bootstrap_metric(
             n_bootstraps (int): Sampling amount
             verbose (bool): Tqdm verbose
 
-<<<<<<< HEAD
         Returns:
             Tuple[float, float]: Lower and upper confidence bounds of the metric
         """
@@ -267,39 +205,6 @@ def bootstrap_metric(
     @staticmethod
     def curves(true_labels: np.ndarray, pred_scores: np.ndarray) -> Tuple[np.ndarray]:
         """Return ROC and FPR curves
-=======
-    Returns:
-        Tuple[float, float]: lcb and ucb metric
-    """
-    list_score = []
-    range_label = np.arange(len(label))
-    bootstraps_index = np.random.choice(
-        range_label, size=len(label) * n_bootstraps, replace=True
-    )
-    mask = label == 1
-    index_class_1 = range_label[mask]
-    for index in tqdm(range(n_bootstraps), disable=not verbose):
-        try:
-            bottom_line = index * len(label)
-            upper_line = len(label) * (index + 1)
-            bootstrap = bootstraps_index[bottom_line:upper_line]
-            bootstraps_class_1 = np.random.choice(index_class_1, size=1)
-            bootstrap = np.r_[
-                bootstraps_class_1, bootstrap
-            ]  # добавляем один индекс класса 1, из-за сильного дисбаланса
-            score = metric(label[bootstrap], probability[bootstrap], min_value)
-            list_score.append(score)
-        except ValueError:
-            continue
-    bound = (1 - conf) / 2
-    lcb = np.nanquantile(list_score, bound)
-    ucb = np.nanquantile(list_score, 1 - bound)
-    return (lcb, ucb)
-
-
-def curves(true_labels: np.ndarray, pred_scores: np.ndarray) -> Tuple[np.ndarray]:
-    """Return ROC and FPR curves
->>>>>>> 82db8101a92df78bdb3f674bbfef7acf6c141ece
 
         Args:
             true_labels (np.ndarray): True labels
@@ -309,7 +214,6 @@ def curves(true_labels: np.ndarray, pred_scores: np.ndarray) -> Tuple[np.ndarray
             Tuple[np.ndarray]: ROC and FPR curves
         """
 
-<<<<<<< HEAD
         def fig2numpy(fig: Any) -> np.ndarray:
             fig.canvas.draw()
             img = fig.canvas.buffer_rgba()
@@ -322,19 +226,6 @@ def curves(true_labels: np.ndarray, pred_scores: np.ndarray) -> Tuple[np.ndarray
         pr_curve = fig2numpy(
             pr_curve.figure_
         )  # Convert Precision-Recall figure to numpy.array
-=======
-    pr_curve = PrecisionRecallDisplay.from_predictions(
-        true_labels, pred_scores
-    )  # строим PrecisionRecall фигуру
-    pr_curve = fig2numpy(
-        pr_curve.figure_
-    )  # переводим PrecisionRecall фигуру в numpy.array
-
-    roc_curve = RocCurveDisplay.from_predictions(
-        true_labels, pred_scores
-    )  # строим RocCurve фигуру
-    roc_curve = fig2numpy(roc_curve.figure_)  # переводим RocCurve фигуру в numpy.array
->>>>>>> 82db8101a92df78bdb3f674bbfef7acf6c141ece
 
         rc_curve = RocCurveDisplay.from_predictions(
             true_labels, pred_scores
