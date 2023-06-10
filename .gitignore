@@ -2,10 +2,12 @@
 /models
 /mlruns
 /venv
-/logs
+/logs/logs_from_bot.log
 src/__pycache__
 .env
 .python-version
 bert_spam_classifier.py
 spam_aug.py
-
+.vscode/
+.dvc/
+/src/metrics/__pycache__

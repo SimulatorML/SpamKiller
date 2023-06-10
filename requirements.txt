@@ -5,3 +5,7 @@ aiogram==2.25.1
 python-dotenv==1.0.0
 fuzzywuzzy==0.18.0
 pylint==2.10.0
+PyYAML==6.0
+scikit_learn==1.0.2
+tqdm==4.65.0
+matplotlib==3.6.2

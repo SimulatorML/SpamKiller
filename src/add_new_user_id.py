@@ -5,52 +5,50 @@ from datetime import datetime
 
 temp_list_with_new_user = []
 
-logger.info("Загрузка новых пользователей")  # загрузка новых пользователей
 
-
-def save_new_members():  # сохранение новых пользователей
+def save_new_members():  # Saving new users
+    logger.info("Save new users")  # Save new users
     with open(
         "logs/temp_list_with_new_user.json", "w"
-    ) as file:  # открываем файл на запись
-        json.dump(temp_list_with_new_user, file)  # записываем в файл
+    ) as file:  # Opening a file for writing
+        json.dump(temp_list_with_new_user, file)  # Writing data to a file
 
 
-logger.info("Сохранение новых пользователей")
-
-
-def load_new_members():  # загрузка новых пользователей
-    global temp_list_with_new_user  # глобальная переменная
-    try:  # попытка открыть файл
+def read_temp_list_with_new_user():  # ead new users added berfore
+    logger.info("Load new users")  # Load new users
+    global temp_list_with_new_user  # Global variable
+    try:  # if file not found
         with open(
             "logs/temp_list_with_new_user.json", "r"
-        ) as file:  # открываем файл на чтение
-            temp_list_with_new_user = json.load(file)  # загружаем данные из файла
-    except FileNotFoundError:  # если файл не найден
+        ) as file:  # Opening a file for reading
+            temp_list_with_new_user = json.load(file)  # Reading data from a file
+    except FileNotFoundError:  # if file not found
         pass
 
 
-def add_new_member(user):  # добавление нового пользователя
-    global temp_list_with_new_user  # глобальная переменная
+def add_new_member(user):  # Adding a new user from def on_user_joined from app.py
+    logger.info("Adding a new user in temp list ")  # Adding a new user
+    global temp_list_with_new_user  # Global variable
+    # load current list of new members from the file
+    read_temp_list_with_new_user()
     user_info = {
         "id": user.id,
         "username": user.username,
         "first_name": user.first_name,
         "last_name": user.last_name,
         "join_time": datetime.now().isoformat(),
-    }  # информация о пользователе
-    temp_list_with_new_user.append(user_info)  # добавляем пользователя в список
-    save_new_members()  # сохраняем список
+    }  # Information about the user
+    temp_list_with_new_user.append(user_info)  # Adding a user to the list
+    save_new_members()  # Saving the list
 
 
-logger.info("Проверка ID пользователя")  # проверка ID пользователя
-
-
-async def check_user_id(message: types.Message):  # проверка ID пользователя
-    global temp_list_with_new_user  # глобальная переменная
-    user_id = message.from_user.id  # ID пользователя
-    for member in temp_list_with_new_user:  # перебираем список пользователей
-        if member["id"] == user_id:  # если ID пользователя есть в списке
-            temp_list_with_new_user.remove(member)  # удаляем пользователя из списка
-            save_new_members()  # сохраняем список
+async def check_user_id(message: types.Message):  # Checking the user ID
+    logger.info("Checking the user ID")  # Checking the user ID
+    global temp_list_with_new_user  # Global variable
+    user_id = message.from_user.id  # User ID
+    for member in temp_list_with_new_user:  # Going through the list
+        if member["id"] == user_id:  # If the user is in the list
+            temp_list_with_new_user.remove(member)  # Removing a user from the list
+            save_new_members()  # Saving the list
             return True
     return False
