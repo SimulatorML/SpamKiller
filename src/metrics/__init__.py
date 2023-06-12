@@ -1,11 +1,3 @@
-from .metrics import recall_at_precision
-from .metrics import recall_at_specificity
-from .metrics import bootstrap_metric
-from .metrics import curves
+from .metrics import Metrics
 
-__all__ = [
-    'recall_at_precision',
-    'recall_at_specificity',
-    'bootstrap_metric',
-    'curves'
-]
+__all__ = ["Metrics"]

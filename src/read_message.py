@@ -10,7 +10,7 @@ import yaml
 # Reading the path value from the config.yml file
 with open("./config.yml", "r") as config_file:
     config = yaml.safe_load(config_file)
-    file_path = config["cleaned_spam"]
+    file_path = config["path_cleaned_spam"]
 
 df = pd.read_csv(file_path, sep=";")
 example_spam = df["text"].astype(str).tolist()  # Converting all elements to strings

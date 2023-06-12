@@ -1,3 +1,10 @@
-cleaned_spam: data/text_spam_dataset/cleaned_spam.csv
-clened_not_spam: data/text_spam_dataset/cleaned_not_spam.csv
+json_spam: data/text_spam_dataset/result_spam.json
+json_not_spam: data/text_spam_dataset/result_not_spam.json
+
+path_spam: data/text_spam_dataset/spam.csv
+path_not_spam: data/text_spam_dataset/not_spam.csv
+path_cleaned_spam: data/text_spam_dataset/cleaned_spam.csv
+path_cleaned_not_spam: data/text_spam_dataset/cleaned_not_spam.csv
+
 df_cleaned_spam_and_not_spam: data/text_spam_dataset/cleaned_spam_and_not_spam.csv
+labels_and_scores: data/text_spam_dataset/labels_and_scores.csv
