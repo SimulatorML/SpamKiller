@@ -5,6 +5,7 @@ import re
 import pandas as pd
 import numpy as np
 import yaml
+from sklearn.model_selection import train_test_split
 
 
 class Data:
@@ -75,13 +76,13 @@ class Data:
             ):  # If not a string, convert it to an empty string
                 text = ""
             messages_to_write.append(
-                [text, label]
+                [text, "photo" in message, label]
             )  # Adding the text and label to the list
 
         # Writing the text to the CSV file
         with open(csv_path, "w", newline="", encoding="utf-8") as csvfile:
             writer = csv.writer(csvfile, delimiter=";")
-            writer.writerow(["text", "label"])  # Writing the header
+            writer.writerow(["text", "photo", "label"])  # Writing the header
             writer.writerows(messages_to_write)
 
         print(
@@ -89,7 +90,7 @@ class Data:
         )
 
     @staticmethod
-    def clean_dataframe(file_path: str, save_path: str) -> pd.DataFrame:
+    def clean_dataframe(file_path: str, save_path: str) -> None:
         """
         Function for cleaning a dataframe from a CSV file
 
@@ -108,7 +109,7 @@ class Data:
         """
 
         # Loading a dataframe from a CSV file using ';' as a separator
-        dataframe = pd.read_csv(file_path, sep=";", na_values=["nan"])
+        dataframe = pd.read_csv(file_path, sep=";")
         # Deleting rows with empty values
         dataframe = dataframe.dropna()
         # Cleaning of symbols and emoticons
@@ -129,7 +130,6 @@ class Data:
         dataframe = dataframe[dataframe["text"].str.len() > 0]
         # Saving the cleared dataframe along the specified path
         dataframe.to_csv(save_path, index=False, sep=";")
-        return dataframe
 
     @staticmethod
     def dataset() -> None:
@@ -142,7 +142,8 @@ class Data:
             config = yaml.safe_load(config_file)
             cleaned_spam_path = config["cleaned_spam"]
             clened_not_spam_path = config["clened_not_spam"]
-            df_cleaned_spam_and_not_spam_path = config["df_cleaned_spam_and_not_spam"]
+            train_path = config["train"]
+            test_path = config["test"]
 
         # Load data cleaned_spam from CSV
         cleaned_spam = pd.read_csv(cleaned_spam_path, sep=";")
@@ -150,11 +151,26 @@ class Data:
         # Load data clened_not_spam from CSV
         clened_not_spam = pd.read_csv(clened_not_spam_path, sep=";")
 
-        # Concatenating two dataframes
-        df_cleaned_spam_and_not_spam = pd.concat(
-            [cleaned_spam, clened_not_spam], ignore_index=True
+        train_spam, test_spam = train_test_split(
+            cleaned_spam, test_size=0.2, shuffle=False
         )
 
-        df_cleaned_spam_and_not_spam.to_csv(
-            df_cleaned_spam_and_not_spam_path, sep=";", index=False
+        train_not_spam, test_not_spam = train_test_split(
+            clened_not_spam, test_size=0.2, shuffle=False
         )
+        train_spam.reset_index(drop=True, inplace=True)
+        train_not_spam.reset_index(drop=True, inplace=True)
+        test_spam.reset_index(drop=True, inplace=True)
+        test_not_spam.reset_index(drop=True, inplace=True)
+
+        # Concatenating two dataframes
+        train = pd.concat([train_spam, train_not_spam], ignore_index=True, axis=0)
+
+        test = pd.concat([test_spam, test_not_spam], ignore_index=True, axis=0)
+
+        train = train.dropna().drop_duplicates(subset="text") # надо здесь разобраться
+        test = test.dropna().drop_duplicates(subset="text")
+
+        # Saving the concatenated dataframes to CSV
+        train.to_csv(train_path, sep=";", index=False)
+        test.to_csv(test_path, sep=";", index=False)
