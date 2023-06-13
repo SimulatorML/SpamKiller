@@ -49,10 +49,10 @@ class Metrics:
         Returns:
             None
         """
-        rec_at_pre = __class__.recall_at_precision(
+        rec_at_pre, _ = __class__.recall_at_precision(
             true_labels, pred_scores, min_precision
         )
-        rec_at_spec = __class__.recall_at_specificity(
+        rec_at_spec, _ = __class__.recall_at_specificity(
             true_labels, pred_scores, min_specificity
         )
         lcb_rec_at_pre, ucb_rec_at_pre = __class__.bootstrap_metric(
@@ -111,7 +111,7 @@ class Metrics:
         true_labels: np.ndarray,
         pred_scores: np.ndarray,
         min_precision: float = 0.95,
-    ) -> float:
+    ) -> Tuple[float, None]:
         """Compute recall at precision
 
         Args:
@@ -120,20 +120,21 @@ class Metrics:
             min_precision (float, optional): Minimum precision for recall. Defaults to 0.95.
 
         Returns:
-            float: Metric value
+            float: Metric value and None
         """
         precision, recall, _ = precision_recall_curve(true_labels, pred_scores)
         mask = precision >= min_precision
         metric = recall[mask].max()
-        return metric
+        treshold = None #Not used, present for API consistency by convention.
+        return metric, treshold
 
     @staticmethod
     def recall_at_specificity(
         true_labels: np.ndarray,
         pred_scores: np.ndarray,
         min_specificity: float = 0.95,
-    ) -> float:
-        """Compute recall at specificity
+    ) -> Tuple[float, float]:
+        """Compute recall at specificity and treshold
 
         Args:
             true_labels (np.ndarray): True labels
@@ -143,15 +144,16 @@ class Metrics:
         Returns:
             float: Metric value
         """
-        fpr, tpr, _ = roc_curve(true_labels, pred_scores, drop_intermediate=False)
+        fpr, tpr, thresholds = roc_curve(true_labels, pred_scores, drop_intermediate=False)
         specificity = 1 - fpr
         index = __class__._binary_search_last_greater(
             specificity, min_specificity
         )  # Use binary search to find the last element
-        if index == -1:  # If index not found, return 0
-            return 0.0
+        if index == -1 or index == 0:  # If index not found, return 0
+            return 0.0, 0.0
         metric = tpr[index]
-        return metric
+        treshold = thresholds[index]
+        return metric, treshold
 
     @staticmethod
     def bootstrap_metric(
@@ -193,7 +195,7 @@ class Metrics:
                 bootstrap = np.r_[
                     bootstraps_class_1, bootstrap
                 ]  # Add one index of class 1 due to severe class imbalance
-                probability = metric(label[bootstrap], scores[bootstrap], min_value)
+                probability, _ = metric(label[bootstrap], scores[bootstrap], min_value)
                 list_score.append(probability)
             except ValueError:
                 continue
