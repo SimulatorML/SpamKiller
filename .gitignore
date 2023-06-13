@@ -11,3 +11,5 @@ spam_aug.py
 .vscode/
 .dvc/
 /src/metrics/__pycache__
+__pycache__
+admin_ids.txt

@@ -5,7 +5,6 @@ import re
 import pandas as pd
 import numpy as np
 import yaml
-from sklearn.model_selection import train_test_split
 
 
 class Data:
@@ -14,20 +13,16 @@ class Data:
     """
 
     @staticmethod
-    def json_to_csv(
-        json_dir: str, json_filename: str, csv_filename: str, label: int
-    ) -> None:
+    def json_to_csv(json_path: str, csv_path: str, label: int) -> None:
         """
         Function for extracting text from a JSON file and writing it to a CSV file
 
         Parameters
         ----------
-        json_dir : str
-            Relative path to the directory with the JSON file
-        json_filename : str
-            JSON file name
-        csv_filename : str
-            CSV file name
+        json_path : str
+            Full path to the JSON file
+        csv_path : str
+            Full path to the CSV file
 
         Returns
         -------
@@ -35,62 +30,39 @@ class Data:
 
         """
 
-        # Relative path to the directory with the JSON file
-        json_path = os.path.join(json_dir, json_filename)
-
         # Opening the JSON file
         with open(json_path, encoding="utf-8", newline="") as f:
             data = json.load(f)
-
-        # Relative path to the directory with the CSV file
-        csv_path = os.path.join(json_dir, csv_filename)
 
         # Extracting the text from the JSON file
         messages_to_write = []
         for message in data["messages"]:
             text = message.get("text")
-            # If the text is a list, concatenate all the 'text' from entities
-            if isinstance(
-                text, list
-            ):  # If the text is a list, concatenate all the 'text' from entities
+            if isinstance(text, list):
                 texts = []
-                for entity in text:  # Iterating over the list
-                    if isinstance(
-                        entity, str
-                    ):  # If the element is a string, add it to the list
-                        texts.append(
-                            entity
-                        )  # If the element is a string, add it to the list
-                    elif isinstance(
-                        entity, dict
-                    ):  # If the element is a dictionary, check if it has a 'text' key
-                        if "text" in entity and isinstance(
-                            entity["text"], str
-                        ):  # If the key exists and the value is a string, add it to the list
-                            texts.append(
-                                entity["text"]
-                            )  # If the key exists and the value is a string, add it to the list
-                text = " ".join(texts)  # Concatenating all the 'text' from entities
-            elif not isinstance(
-                text, str
-            ):  # If not a string, convert it to an empty string
+                for entity in text:
+                    if isinstance(entity, str):
+                        texts.append(entity)
+                    elif isinstance(entity, dict):
+                        if "text" in entity and isinstance(entity["text"], str):
+                            texts.append(entity["text"])
+                text = " ".join(texts)
+            elif not isinstance(text, str):
                 text = ""
-            messages_to_write.append(
-                [text, "photo" in message, label]
-            )  # Adding the text and label to the list
+            messages_to_write.append([text, label])
 
         # Writing the text to the CSV file
         with open(csv_path, "w", newline="", encoding="utf-8") as csvfile:
             writer = csv.writer(csvfile, delimiter=";")
-            writer.writerow(["text", "photo", "label"])  # Writing the header
+            writer.writerow(["text", "label"])  # Writing the header
             writer.writerows(messages_to_write)
 
         print(
-            f"Ready! The text from the JSON file was overwritten into a file {csv_filename}"
+            f"Ready! The text from the JSON file was overwritten into a file {csv_path}"
         )
 
     @staticmethod
-    def clean_dataframe(file_path: str, save_path: str) -> None:
+    def clean_dataframe(file_path: str, save_path: str) -> pd.DataFrame:
         """
         Function for cleaning a dataframe from a CSV file
 
@@ -109,7 +81,7 @@ class Data:
         """
 
         # Loading a dataframe from a CSV file using ';' as a separator
-        dataframe = pd.read_csv(file_path, sep=";")
+        dataframe = pd.read_csv(file_path, sep=";", na_values=["nan"])
         # Deleting rows with empty values
         dataframe = dataframe.dropna()
         # Cleaning of symbols and emoticons
@@ -130,6 +102,7 @@ class Data:
         dataframe = dataframe[dataframe["text"].str.len() > 0]
         # Saving the cleared dataframe along the specified path
         dataframe.to_csv(save_path, index=False, sep=";")
+        return dataframe
 
     @staticmethod
     def dataset() -> None:
@@ -140,10 +113,9 @@ class Data:
         """
         with open("./config.yml", "r", encoding="utf-8") as config_file:
             config = yaml.safe_load(config_file)
-            cleaned_spam_path = config["cleaned_spam"]
-            clened_not_spam_path = config["clened_not_spam"]
-            train_path = config["train"]
-            test_path = config["test"]
+            cleaned_spam_path = config["path_cleaned_spam"]
+            clened_not_spam_path = config["path_not_spam"]
+            df_cleaned_spam_and_not_spam_path = config["df_cleaned_spam_and_not_spam"]
 
         # Load data cleaned_spam from CSV
         cleaned_spam = pd.read_csv(cleaned_spam_path, sep=";")
@@ -151,26 +123,40 @@ class Data:
         # Load data clened_not_spam from CSV
         clened_not_spam = pd.read_csv(clened_not_spam_path, sep=";")
 
-        train_spam, test_spam = train_test_split(
-            cleaned_spam, test_size=0.2, shuffle=False
-        )
-
-        train_not_spam, test_not_spam = train_test_split(
-            clened_not_spam, test_size=0.2, shuffle=False
-        )
-        train_spam.reset_index(drop=True, inplace=True)
-        train_not_spam.reset_index(drop=True, inplace=True)
-        test_spam.reset_index(drop=True, inplace=True)
-        test_not_spam.reset_index(drop=True, inplace=True)
-
         # Concatenating two dataframes
-        train = pd.concat([train_spam, train_not_spam], ignore_index=True, axis=0)
+        df_cleaned_spam_and_not_spam = pd.concat(
+            [cleaned_spam, clened_not_spam], ignore_index=True
+        )
+        # Drop NaN values
+        df_cleaned_spam_and_not_spam = df_cleaned_spam_and_not_spam.dropna()
 
-        test = pd.concat([test_spam, test_not_spam], ignore_index=True, axis=0)
+        # Save dataframe to CSV
+        df_cleaned_spam_and_not_spam.to_csv(
+            df_cleaned_spam_and_not_spam_path, sep=";", index=False
+        )
 
-        train = train.dropna().drop_duplicates(subset="text") # надо здесь разобраться
-        test = test.dropna().drop_duplicates(subset="text")
 
-        # Saving the concatenated dataframes to CSV
-        train.to_csv(train_path, sep=";", index=False)
-        test.to_csv(test_path, sep=";", index=False)
+if __name__ == "__main__":
+    # Initialize your Data class
+    data = Data()
+
+    with open("./config.yml", "r", encoding="utf-8") as config_file:
+        config = yaml.safe_load(config_file)
+        json_spam = config["json_spam"]
+        json_not_spam = config["json_not_spam"]
+        path_spam = config["path_spam"]
+        path_cleaned_spam = config["path_cleaned_spam"]
+        path_not_spam = config["path_not_spam"]
+        path_cleaned_not_spam = config["path_cleaned_not_spam"]
+
+    # Call json_to_csv
+    data.json_to_csv(json_spam, path_spam, 1)
+    data.json_to_csv(json_not_spam, path_not_spam, 0)
+
+    # # Call clean_dataframe
+    cleaned_spam_dataframe = data.clean_dataframe(path_spam, path_cleaned_spam)
+    cleaned_not_spam_dataframe = data.clean_dataframe(
+        path_not_spam, path_cleaned_not_spam
+    )
+    # Call dataset
+    data.dataset()
