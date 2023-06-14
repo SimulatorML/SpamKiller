@@ -9,7 +9,7 @@ def job(
     min_precision: float = 0.95,
     min_specificity: float = 0.95,
     conf: float = 0.95,
-    n_bootstraps: int = 10_000,
+    n_bootstraps: int = 1,
 ) -> None:
     """
     Runs a job to evaluate the performance of a binary classification model based on the provided parameters.
@@ -32,7 +32,7 @@ def job(
     # Read data
     with open("./config.yml", "r", encoding="utf8") as config_file:
         config = yaml.safe_load(config_file)
-        path_test = config["path_test"]
+        path_test = config["labels_and_scores"]
 
     path_test = pd.read_csv(
         path_test,

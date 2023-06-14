@@ -1,10 +1,7 @@
 import pandas as pd
 import yaml
 import fire
-from tqdm import tqdm
-from src.models.rules_base_model import (
-    RuleBasedClassifier,
-)  # import your Model class from its file
+from src.models.rule_based_model import RuleBasedClassifier
 
 
 def job(Model=RuleBasedClassifier) -> None:
@@ -20,25 +17,21 @@ def job(Model=RuleBasedClassifier) -> None:
     """
     with open("./config.yml", "r", encoding="utf8") as config_file:
         config = yaml.safe_load(config_file)
+        train_path = config["path_train"]
         test_path = config["path_test"]
-        path_save_test = config["path_save_test"]
-    test_path = pd.read_csv(test_path, sep=";")
+        save_path = config["labels_and_scores"]
 
-    # Load the model
+    train = pd.read_csv(train_path, sep=";")
+    test = pd.read_csv(test_path, sep=";")
+
     model = Model()
-    # Make predictions fof the test set
-    pred_scores = model.predict(tqdm(test_path["text"]))
-    test_path["pred_scores"] = pred_scores
+    model.fit(train[["text", "photo"]], train["label"])
+    pred_scores = model.predict(test[["text", "photo"]])
 
-    test_path = pd.DataFrame(
-        {
-            "text": test_path["text"],
-            "pred_scores": pred_scores,
-            "label": test_path["label"].values,
-        }
+    labels_and_scores = pd.DataFrame(
+        {"pred_scores": pred_scores, "label": test["label"].values}
     )
-
-    test_path.to_csv(path_save_test, sep=";", index=False)
+    labels_and_scores.to_csv(save_path, sep=";", index=False)
 
 
 if __name__ == "__main__":

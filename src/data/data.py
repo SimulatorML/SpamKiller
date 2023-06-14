@@ -140,16 +140,16 @@ class Data:
         """
         with open("./config.yml", "r", encoding="utf-8") as config_file:
             config = yaml.safe_load(config_file)
-            path_cleaned_spam = config["path_cleaned_spam"]
-            path_cleaned_not_spam = config["path_cleaned_not_spam"]
+            cleaned_spam_path = config["path_cleaned_spam"]
+            clened_not_spam_path = config["path_cleaned_not_spam"]
             train_path = config["path_train"]
             test_path = config["path_test"]
 
         # Load data cleaned_spam from CSV
-        cleaned_spam = pd.read_csv(path_cleaned_spam, sep=";")
+        cleaned_spam = pd.read_csv(cleaned_spam_path, sep=";")
 
         # Load data clened_not_spam from CSV
-        clened_not_spam = pd.read_csv(path_cleaned_not_spam, sep=";")
+        clened_not_spam = pd.read_csv(clened_not_spam_path, sep=";")
 
         train_spam, test_spam = train_test_split(
             cleaned_spam, test_size=0.2, shuffle=False
@@ -168,7 +168,7 @@ class Data:
 
         test = pd.concat([test_spam, test_not_spam], ignore_index=True, axis=0)
 
-        train = train.dropna().drop_duplicates(subset="text") # надо здесь разобраться
+        train = train.dropna().drop_duplicates(subset="text")  # надо здесь разобраться
         test = test.dropna().drop_duplicates(subset="text")
 
         # Saving the concatenated dataframes to CSV

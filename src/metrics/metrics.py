@@ -13,7 +13,6 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from tqdm.notebook import tqdm
 
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("MetricsCalculator")
 
@@ -126,7 +125,7 @@ class Metrics:
         precision, recall, _ = precision_recall_curve(true_labels, pred_scores)
         mask = precision >= min_precision
         metric = recall[mask].max()
-        treshold = None  # Not used, present for API consistency by convention.
+        treshold = None #Not used, present for API consistency by convention.
         return metric, treshold
 
     @staticmethod
@@ -145,9 +144,7 @@ class Metrics:
         Returns:
             float: Metric value
         """
-        fpr, tpr, thresholds = roc_curve(
-            true_labels, pred_scores, drop_intermediate=False
-        )
+        fpr, tpr, thresholds = roc_curve(true_labels, pred_scores, drop_intermediate=False)
         specificity = 1 - fpr
         index = __class__._binary_search_last_greater(
             specificity, min_specificity
@@ -155,7 +152,7 @@ class Metrics:
         if index == -1 or index == 0:  # If index not found, return 0
             return 0.0, 0.0
         metric = tpr[index]
-        treshold = thresholds[index - 1]
+        treshold = thresholds[index]
         return metric, treshold
 
     @staticmethod
@@ -252,25 +249,7 @@ class Metrics:
             predictions_labels (np.ndarray): Target scores
         """
         conf_matrix = confusion_matrix(true_labels, predictions_labels)
-        ax = sns.heatmap(conf_matrix, annot=True, cmap="Blues", fmt="g")
-
-        # Создание подписей
-        labels = np.array(
-            [["True Negative", "False Positive"], ["False Negative", "True Positive"]]
-        )
-
-        # Добавление подписей на график
-        for i in range(2):
-            for j in range(2):
-                ax.text(
-                    j + 0.5,
-                    i + 0.8,
-                    labels[i, j],
-                    horizontalalignment="center",
-                    verticalalignment="center",
-                    fontsize=10,
-                )
-
+        sns.heatmap(conf_matrix, annot=True, cmap="Blues", fmt="g")
         plt.xlabel("Predicted")
         plt.ylabel("Actual")
         plt.show()
