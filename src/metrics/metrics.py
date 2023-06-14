@@ -155,7 +155,7 @@ class Metrics:
         if index == -1 or index == 0:  # If index not found, return 0
             return 0.0, 0.0
         metric = tpr[index]
-        treshold = thresholds[index]
+        treshold = thresholds[index - 1]
         return metric, treshold
 
     @staticmethod
