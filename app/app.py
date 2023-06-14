@@ -2,10 +2,10 @@ import os
 from dotenv import load_dotenv
 from loguru import logger
 from aiogram import Bot, Dispatcher, types
-from src.add_new_user_id import read_temp_list_with_new_user, add_new_member
-from src.read_message import handle_msg_with_args
+from src.add_new_user_id import read_temp_list_with_new_user, add_new_member, check_user_id
 from functools import partial
 from aiogram import executor
+from src.models.rules_base_model import RuleBasedClassifier  # Импортируем наш класс
 
 
 # Load environment variables
@@ -18,6 +18,8 @@ TOKEN = os.getenv("API_KEY_TG")  # Get token from environment variable
 ADMIN_ID = os.getenv(
     "ADMIN_IDS"
 )  # Get admin id from environment variable (in .env file)
+
+classifier = RuleBasedClassifier()  # Создаем экземпляр нашего классификатора
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(
@@ -38,6 +40,35 @@ async def on_shutdown(dp):
     await bot.send_message(ADMIN_ID, "Bot stopped")
     await bot.close()
 
+async def handle_msg_with_args(message: types.Message, bot, ADMIN_ID):
+    """
+    Function for processing messages from users and sending them to the administrator if the message is suspected of spam
+
+    Parameters
+    ----------
+    message : types.Message
+        Message from user
+    bot : Bot
+        Bot
+    ADMIN_ID : str
+        Admin id
+
+    Returns
+    -------
+    None
+    """
+    if await check_user_id(message):
+        logger.info(f"Message got from new user. Checking for spam")
+
+        score = classifier.score(message.text)
+        logger.info(f"Score: {score}")
+
+        if score >= 0.90:
+            logger.info(f"The message suspected of spam was sent to the administrator")
+            await bot.send_message(
+                ADMIN_ID,
+                f'A message suspected of spam with a probability of {int(score * 100)} percent -->"{message.text}" <-- from user {message.from_user.id}',
+            )
 
 # Creating a wrapper for handle_msg, passing all the necessary arguments
 def handle_msg_partial():

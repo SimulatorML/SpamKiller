@@ -1,10 +1,13 @@
 import pandas as pd
 import yaml
 import fire
-from rules_base_model import Model  # import your Model class from its file
+from tqdm import tqdm
+from src.models.rules_base_model import (
+    RuleBasedClassifier,
+)  # import your Model class from its file
 
 
-def job() -> None:
+def job(Model=RuleBasedClassifier) -> None:
     """
     Runs a given model on a cleaned dataset of spam and non-spam messages, and saves the predicted scores
     and corresponding labels to a CSV file.
@@ -17,23 +20,25 @@ def job() -> None:
     """
     with open("./config.yml", "r", encoding="utf8") as config_file:
         config = yaml.safe_load(config_file)
-        file_path = config["df_cleaned_spam_and_not_spam"]
-        save_path = config["labels_and_scores"]
-    df_cleaned_spam_and_not_spam = pd.read_csv(file_path, sep=";")
-    labels_and_scores = pd.read_csv(save_path, sep=";")
+        test_path = config["path_test"]
+        path_save_test = config["path_save_test"]
+    test_path = pd.read_csv(test_path, sep=";")
 
+    # Load the model
     model = Model()
-    pred_scores = model.predict(df_cleaned_spam_and_not_spam["text"])
-    labels_and_scores["pred_scores"] = pred_scores
+    # Make predictions fof the test set
+    pred_scores = model.predict(tqdm(test_path["text"]))
+    test_path["pred_scores"] = pred_scores
 
-    labels_and_scores = pd.DataFrame(
+    test_path = pd.DataFrame(
         {
-            "text": df_cleaned_spam_and_not_spam["text"],
+            "text": test_path["text"],
             "pred_scores": pred_scores,
-            "label": df_cleaned_spam_and_not_spam["label"].values,
+            "label": test_path["label"].values,
         }
     )
-    labels_and_scores.to_csv(save_path, sep=";", index=False)
+
+    test_path.to_csv(path_save_test, sep=";", index=False)
 
 
 if __name__ == "__main__":

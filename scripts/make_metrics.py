@@ -9,7 +9,7 @@ def job(
     min_precision: float = 0.95,
     min_specificity: float = 0.95,
     conf: float = 0.95,
-    n_bootstraps: int = 3,
+    n_bootstraps: int = 10_000,
 ) -> None:
     """
     Runs a job to evaluate the performance of a binary classification model based on the provided parameters.
@@ -28,20 +28,22 @@ def job(
     :return: None
     :rtype: None
     """
-    threshold = 0.90  # надо определить пороговое значение
+
     # Read data
     with open("./config.yml", "r", encoding="utf8") as config_file:
         config = yaml.safe_load(config_file)
-        labels_and_scores_path = config["labels_and_scores"]
+        path_test = config["path_test"]
 
-    labels_and_scores = pd.read_csv(
-        labels_and_scores_path,
+    path_test = pd.read_csv(
+        path_test,
         sep=";",
     )
 
     # prepare data
-    true_labels = labels_and_scores["label"].to_numpy()
-    pred_scores = labels_and_scores["pred_scores"].to_numpy()
+    true_labels = path_test["label"].to_numpy()
+    pred_scores = path_test["pred_scores"].to_numpy()
+
+    _, threshold = Metrics.recall_at_specificity(true_labels, pred_scores)
     pred_labels = np.where(pred_scores < threshold, 0, 1)
 
     Metrics.get_metrics(

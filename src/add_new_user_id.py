@@ -43,7 +43,6 @@ def add_new_member(user):  # Adding a new user from def on_user_joined from app.
 
 
 async def check_user_id(message: types.Message):  # Checking the user ID
-    logger.info("Checking the user ID")  # Checking the user ID
     global temp_list_with_new_user  # Global variable
     user_id = message.from_user.id  # User ID
     for member in temp_list_with_new_user:  # Going through the list
