@@ -2,14 +2,16 @@ import yaml
 import pandas as pd
 import numpy as np
 import fire
-from src.metrics.metrics import Metrics
+from src.metrics.metrics import (
+    RecallAtPrecision,
+    RecallAtSpecificity,
+    ConfusionMatrix,
+    BootstrapCurve,
+)
 
 
 def job(
-    min_precision: float = 0.95,
-    min_specificity: float = 0.95,
-    conf: float = 0.95,
-    n_bootstraps: int = 1,
+    min_value: float = 0.99, conf: float = 0.95, n_bootstraps: int = 10_000
 ) -> None:
     """
     Runs a job to evaluate the performance of a binary classification model based on the provided parameters.
@@ -29,31 +31,77 @@ def job(
     :rtype: None
     """
 
-    # Read data
     with open("./config.yml", "r", encoding="utf8") as config_file:
         config = yaml.safe_load(config_file)
-        path_test = config["labels_and_scores"]
+        labels_and_scores = config["labels_and_scores"]
 
-    path_test = pd.read_csv(
-        path_test,
+    labels_and_scores = pd.read_csv(
+        labels_and_scores,
         sep=";",
     )
 
-    # prepare data
-    true_labels = path_test["label"].to_numpy()
-    pred_scores = path_test["pred_scores"].to_numpy()
+    true_labels = labels_and_scores["label"].to_numpy()
+    pred_scores = labels_and_scores["pred_scores"].to_numpy()
 
-    _, threshold = Metrics.recall_at_specificity(true_labels, pred_scores)
+    recall_at_precision = RecallAtPrecision(
+        min_value=min_value, conf=conf, n_bootstraps=n_bootstraps
+    )
+    recall_at_specificity = RecallAtSpecificity(
+        min_value=min_value, conf=conf, n_bootstraps=n_bootstraps
+    )
+    conf_matrix = ConfusionMatrix()
+    precision_recall_curve = BootstrapCurve(
+        metric="precision_recall", conf=conf, n_bootstraps=n_bootstraps
+    )
+    specificity_recall_curve = BootstrapCurve(
+        metric="specificity_recall", conf=conf, n_bootstraps=n_bootstraps
+    )
+
+    threshold, max_recall_at_precision = recall_at_precision.max_recall(
+        true_labels, pred_scores
+    )
+    (
+        lcb_recall_at_precision,
+        ucb_recall_at_precision,
+    ) = recall_at_precision.bootstrap_recall(true_labels, pred_scores)
+    _, max_recall_at_specificity = recall_at_specificity.max_recall(
+        true_labels, pred_scores
+    )
+    (
+        lcb_recall_at_specificity,
+        ucb_recall_at_specificity,
+    ) = recall_at_specificity.bootstrap_recall(true_labels, pred_scores)
+
     pred_labels = np.where(pred_scores < threshold, 0, 1)
 
-    Metrics.get_metrics(
-        true_labels,
-        pred_labels,
-        pred_scores,
-        min_precision,
-        min_specificity,
+    precision_recall_curve(true_labels, pred_scores)
+    specificity_recall_curve(true_labels, pred_scores)
+    conf_matrix(true_labels, pred_labels)
+
+    print("recall@precision %.2f%% : %.2f" % (min_value * 100, max_recall_at_precision))
+
+    print(
+        "lower: %s and upper: %s bounds in a confidence interval (%s) "
+        "of a recall@precision %.2f%% : %.2f" %
+        (lcb_recall_at_precision,
+        ucb_recall_at_precision,
         conf,
-        n_bootstraps,
+        min_value * 100,
+        max_recall_at_precision,)
+    )
+
+    print(
+        "recall@specificity %.2f%% : %.2f" % (min_value * 100, max_recall_at_specificity)
+    )
+
+    print(
+        "lower: %s and upper: %s bounds in a confidence interval (%s) "
+        "of a recall@specificity %.2f%% : %.2f" %
+        (lcb_recall_at_specificity,
+        ucb_recall_at_specificity,
+        conf,
+        min_value * 100,
+        max_recall_at_specificity,)
     )
 
 
