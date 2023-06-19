@@ -14,9 +14,37 @@ This version of the bot uses a primitive model based on heuristic rules. This is
 
 
 # Project structure
-The following structure is used in this project
-: the `src` module: contains the main code of the project, namely:
-`app.py ` - the main file in which the bot is launched; `add_new_user_id.py ` - adding a new user to a temporary file.json, the user will stay in it until he sends his first message to the chat; `read_message.py ` - reading the very first message left by the newly added user and checking it for spam, with a further message to the chat administrator if the message is recognized as spam; `json_to_csv.py ` is the file responsible for extracting text from .a json file containing the exported chat history with and without spam, followed by translation into a .csv table; `clean_text.py ` - in this file, the text is cleared for measuring the quality of the model and providing spam samples for detection by the bot.
+The following structure is used in this project:
+1. `src module`: contains the main code of the project,
+    1.1 `app.py ` - the main file in which the bot is launched
+
+2. `data module`: not available in the public version
+
+3. `logs module`: contains project logs,
+    3.1 `logs_from_bot.log` - the main log file in which all the actions of the bot are recorded (not available in the public version);
+    3.2 `temp_list_with_new_user.json` is a temporary file to which the user is added until he sends his first message to the chat
+
+4. `scripts modele`: contains scripts for working with data,
+    4.1 `data_preprocessing.py` - performs data cleaning
+    4.2 `make_metrics.py` - calculates the quality metrics of the model
+    4.3 `predict_spam_scores.py` - makes predictions from the model
+    4.4 `watching.py` - in development
+5. `src module`: contains the source code
+    5.1 data module
+        5.1.1 `data.py` - source code for data cleaning
+    5.2 `model module`
+        5.2.1 `model.py` - source code for the model
+    5.3 scripts module
+        5.3.1 `make_metrics.py` - source code for calculating the quality metrics of the model
+    5.4 add_new_user_id.py - source code for adding a new user to the temporary file
+    5.5 `commands.py` - source code for bot commands
+    5.6  `send_messages.py` - source code for sending messages to admins and a group
+
+
+
+
+
+
 
 
 # The main tools used in the project

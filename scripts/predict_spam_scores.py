@@ -24,6 +24,7 @@ def job(Model=RuleBasedClassifier) -> None:
     train = pd.read_csv(train_path, sep=";")
     test = pd.read_csv(test_path, sep=";")
 
+    # Load the model
     model = Model()
     model.fit(train[["text", "photo"]], train["label"])
     pred_scores = model.predict(test[["text", "photo"]])
@@ -31,7 +32,8 @@ def job(Model=RuleBasedClassifier) -> None:
     labels_and_scores = pd.DataFrame(
         {"pred_scores": pred_scores, "label": test["label"].values}
     )
-    labels_and_scores.to_csv(save_path, sep=";", index=False)
+
+    test_path.to_csv(path_save_test, sep=";", index=False)
 
 
 if __name__ == "__main__":
