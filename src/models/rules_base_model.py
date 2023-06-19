@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from loguru import logger
 import pandas as pd
 import yaml
+import re
 
 logger.info("Init rules_base_model")
 
@@ -25,6 +26,7 @@ class RuleBasedClassifier:
             {"name": "contains_stop_word", "check": self._check_contains_stop_word, "score": 0.30},
             {"name": "contains_dangerous_word", "check": self._check_contains_dangerous_word, "score": 0.10},
             {"name": "contains_read_more", "check": self._check_contains_read_more, "score": 1.0},
+            {"name": "contains_mixed_alphabet", "check": self._contains_mixed_alphabet, "score": 0.80},
             # add new rules here...
         ]
 
@@ -91,6 +93,12 @@ class RuleBasedClassifier:
 
     def _check_contains_read_more(self, message):
         if "читать продолжение" in message:
+            return True
+        return False
+
+    def _contains_mixed_alphabet(self, message):
+        text = message
+        if re.search("[а-я]", text) and re.search("[a-z]", text):
             return True
         return False
 

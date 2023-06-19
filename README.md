@@ -16,6 +16,37 @@ This version of the bot uses a primitive model based on heuristic rules. This is
 # Project structure
 The following structure is used in this project:
 1. `src module`: contains the main code of the project,
+    - `app.py ` - the main file in which the bot is launched
+
+2. `data module`: not available in the public version
+
+3. `logs module`: contains project logs,
+    - `logs_from_bot.log` - the main log file in which all the actions of the bot are recorded (not available in the public version);
+    - `temp_list_with_new_user.json` is a temporary file to which the user is added until he sends his first message to the chat
+
+4. `scripts modele`: contains scripts for working with data,
+    - `data_preprocessing.py` - performs data cleaning
+    - `make_metrics.py` - calculates the quality metrics of the model
+    - `predict_spam_scores.py` - makes predictions from the model
+    - `watching.py` - in development
+5. `src module`: contains the source code
+    - `data module` `data.py` - source code for data cleaning
+    - `model module`
+    - `model.py` - source code for the model
+    - `scripts module`
+    - `make_metrics.py` - source code for calculating the quality metrics of the model
+    - `add_new_user_id.py` - source code for adding a new user to the temporary file
+    - `commands.py` - source code for bot commands
+    - `send_messages.py` - source code for sending messages to admins and a group
+
+
+
+
+
+
+
+The following structure is used in this project:
+1. `src module`: contains the main code of the project,
     1.1 `app.py ` - the main file in which the bot is launched
 
 2. `data module`: not available in the public version
