@@ -12,3 +12,6 @@ labels_and_scores: data/text_spam_dataset/labels_and_scores.csv
 path_train: data/text_spam_dataset/train.csv
 path_test: data/text_spam_dataset/test.csv
 path_save_test: data/text_spam_dataset/test.csv
+
+stop_word: data/text_spam_dataset/stop_word.csv
+dangerous_word: data/text_spam_dataset/dangerous_word.csv
