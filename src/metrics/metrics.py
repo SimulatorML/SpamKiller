@@ -12,47 +12,43 @@ from tqdm.notebook import tqdm
 
 @dataclass
 class Metrics(ABC):
+    """Metrics"""
+
     min_value: float = 0.99
     conf: float = 0.95
     n_bootstraps: int = 10000
     verbose: bool = False
 
     @abstractmethod
-    def max_recall(self, true_labels: np.ndarray, pred_scores: np.ndarray) -> None:
+    def max_recall(self, true_labels: np.ndarray, pred_scores: np.ndarray) -> float:
         """
-        Abstract method to calculate the maximum recall given true labels and predicted scores.
-
-        Args:
-            true_labels (np.ndarray): A numpy array of true labels.
-            pred_scores (np.ndarray): A numpy array of predicted scores.
-
-        Returns:
-            None
+        This is an abstract method that calculates the maximum recall score for a binary classification problem.
+        The function takes in two parameters:
+        `true_labels` is a numpy array that contains the true labels for the binary classification problem.
+        `pred_scores` is a numpy array that contains the predicted scores for the binary classification problem.
+        The function returns a float value that represents the maximum recall score for the binary classification problem.
         """
         pass
 
     def bootstrap_recall(
         self, true_labels: np.ndarray, pred_scores: np.ndarray
     ) -> Tuple[float, float]:
-        """Returns confidence bounds of the metric
+        """
+        Compute the lower and upper confidence bounds of the recall metric using bootstrap resampling.
 
         Args:
-            metric (function): Function for bootstrap
-            label (np.ndarray): True labels
-            scores (np.ndarray): Model scores
-            min_value (float): Minimum value for the metric
-            conf (float): Confidence interval
-            n_bootstraps (int): Sampling amount
-            verbose (bool): Tqdm verbose
+            true_labels (np.ndarray): Array of ground truth labels.
+            pred_scores (np.ndarray): Array of predicted scores.
 
         Returns:
-            Tuple[float, float]: Lower and upper confidence bounds of the metric
+            Tuple[float, float]: A tuple containing the lower and upper confidence bounds of the recall metric.
         """
         list_score = []
         range_label = np.arange(len(true_labels))
         bootstraps_index = np.random.choice(
             range_label, size=len(true_labels) * self.n_bootstraps, replace=True
         )
+
         for index in tqdm(range(self.n_bootstraps), disable=not self.verbose):
             try:
                 bottom_line = index * len(true_labels)
@@ -62,36 +58,45 @@ class Metrics(ABC):
                     true_labels[bootstrap], pred_scores[bootstrap]
                 )
                 list_score.append(recall)
+
             except ValueError:
                 continue
+
         bound = (1 - self.conf) / 2
         lcb = np.quantile(list_score, bound)
         ucb = np.quantile(list_score, 1 - bound)
+
         return (lcb, ucb)
 
 
 @dataclass
 class RecallAtPrecision(Metrics):
+    """Precision at recall"""
+
     def max_recall(
         self, true_labels: np.ndarray, pred_scores: np.ndarray
     ) -> Tuple[float, float]:
         """
-        Calculates the maximum recall and corresponding threshold probability for a binary classification model.
-        
+        Calculates the maximum recall and corresponding threshold probability for a binary classification problem.
+
         Args:
-            true_labels (np.ndarray): A 1D array of true binary labels.
-            pred_scores (np.ndarray): A 1D array of predicted scores.
-        
+            true_labels (np.ndarray): A numpy array of true labels.
+            pred_scores (np.ndarray): A numpy array of predicted scores.
+
         Returns:
-            Tuple[float, float]: A tuple containing the threshold probability at the maximum recall and the maximum recall.
+            A tuple of two floats representing the threshold probability and max recall.
         """
         try:
             argsort_array = np.argsort(pred_scores)[::-1]
             thresholds = pred_scores[argsort_array]
-            true_labels = true_labels[argsort_array]
+            labels = true_labels[argsort_array]
 
-            tps = np.cumsum(true_labels)
-            fps = np.cumsum(1 - true_labels)
+            distinct_value_indices = np.where(np.diff(thresholds))[0]
+            threshold_idxs = np.r_[distinct_value_indices, labels.size - 1]
+
+            thresholds = thresholds[threshold_idxs]
+            tps = np.cumsum(labels)[threshold_idxs]
+            fps = np.cumsum(1 - labels)[threshold_idxs]
             precision = tps / (tps + fps)
             recall = tps / tps[-1]
 
@@ -109,26 +114,28 @@ class RecallAtPrecision(Metrics):
 
 @dataclass
 class RecallAtSpecificity(Metrics):
+    """Recall at specificity"""
+
     def max_recall(
         self, true_labels: np.ndarray, pred_scores: np.ndarray
     ) -> Tuple[float, float]:
         """
-        Computes the maximum recall and corresponding threshold probability for a binary classifier.
-        
-        Args:
-            true_labels (np.ndarray): An array of true labels.
-            pred_scores (np.ndarray): An array of predicted scores.
-            
-        Returns:
-            Tuple[float, float]: A tuple containing the threshold probability and maximum recall.
+        Calculates the maximum recall given true labels and predicted scores.
+        :param true_labels: A numpy array of true labels.
+        :param pred_scores: A numpy array of predicted scores.
+        :return: A tuple containing the threshold probability and maximum recall.
         """
         try:
             argsort_array = np.argsort(pred_scores)[::-1]
             thresholds = pred_scores[argsort_array]
-            true_labels = true_labels[argsort_array]
+            labels = true_labels[argsort_array]
 
-            tps = np.cumsum(true_labels)
-            fp = np.cumsum(1 - true_labels)
+            distinct_value_indices = np.where(np.diff(thresholds))[0]
+            threshold_idxs = np.r_[distinct_value_indices, labels.size - 1]
+
+            thresholds = thresholds[threshold_idxs]
+            tps = np.cumsum(labels)[threshold_idxs]
+            fp = np.cumsum(1 - labels)[threshold_idxs]
             specificity = 1 - fp / fp[-1]
             recall = tps / tps[-1]
 
@@ -172,38 +179,54 @@ class RecallAtSpecificity(Metrics):
 
 @dataclass
 class Plot(ABC):
+    """Base class for plotting"""
+
     @abstractmethod
     def __call__(self, true_labels: np.ndarray, pred_scores: np.ndarray) -> None:
         """
-        An abstract method that takes in true labels and predicted scores and does not return anything.
+        This is an abstract method that takes in two numpy arrays of true labels and predicted scores,
+        respectively. It does not return anything. It is meant to be overridden by a subclass to define
+        a custom behavior for evaluating the predicted scores against the true labels.
 
-        :param true_labels: a numpy array of the true labels
-        :type true_labels: np.ndarray
-        :param pred_scores: a numpy array of the predicted scores
-        :type pred_scores: np.ndarray
-        :return: None
+        Parameters:
+            true_labels (np.ndarray): A 1-dimensional numpy array containing true labels.
+            pred_scores (np.ndarray): A 2-dimensional numpy array containing predicted scores.
+
+        Returns:
+            None
         """
         pass
 
 
 @dataclass
 class ConfusionMatrix(Plot):
+    """Plot a confusion matrix"""
+
     def __call__(
         self,
         y_true: np.ndarray,
         y_pred: np.ndarray,
         labels: list = "default",
         ymap: dict = "default",
-    ) -> plt.Axes:
+    ) -> None:
         """
-        Plot a confusion matrix using the given true and predicted labels.
+        Generate a confusion matrix heatmap plot using seaborn and matplotlib.
 
-        :param y_true: A numpy array representing the true labels.
-        :param y_pred: A numpy array representing the predicted labels.
-        :param labels: A list of labels to use for the confusion matrix. Default is [0,1].
-        :param ymap: A dictionary mapping labels to their corresponding names. Default is {1: 'Spam', 0: 'Not spam'}.
+        Parameters:
+        -----------
+        y_true : np.ndarray
+            An array of true labels.
+        y_pred : np.ndarray
+            An array of predicted labels.
+        labels : list, optional
+            The label names to be used in the plot. Default is ["0", "1"].
+        ymap : dict, optional
+            A dictionary mapping the label values to their corresponding names.
+            Default is {1: "Spam", 0: "Not spam"}.
 
-        :return: A matplotlib axis object containing the plotted confusion matrix.
+        Returns:
+        --------
+        None
         """
         if labels == "default":
             labels = [0, 1]
@@ -213,11 +236,13 @@ class ConfusionMatrix(Plot):
             y_pred = [ymap[yi] for yi in y_pred]
             y_true = [ymap[yi] for yi in y_true]
             labels = [ymap[yi] for yi in labels]
+
         cm = confusion_matrix(y_true, y_pred, labels=labels)
         cm_sum = np.sum(cm, axis=1, keepdims=True)
         cm_perc = cm / cm_sum.astype(float) * 100
         annot = np.empty_like(cm).astype(str)
         nrows, ncols = cm.shape
+
         for i in range(nrows):
             for j in range(ncols):
                 c = cm[i, j]
@@ -229,10 +254,12 @@ class ConfusionMatrix(Plot):
                     annot[i, j] = ""
                 else:
                     annot[i, j] = "%.1f%%\n%d" % (p, c)
+
         annot[0, 0] += "\nTN"
         annot[0, 1] += "\nFP"
         annot[1, 0] += "\nFN"
         annot[1, 1] += "\nTP"
+
         cm = pd.DataFrame(cm, index=labels, columns=labels)
         cm.index.name = "Actual"
         cm.columns.name = "Predicted"
@@ -243,20 +270,25 @@ class ConfusionMatrix(Plot):
 
 @dataclass
 class BootstrapCurve(Plot):
+    """Plot a bootstrap curve"""
+
     metric: str = "precision_recall"
     conf: float = 0.95
     n_bootstraps: int = 10_000
 
     def __call__(self, true_labels: np.ndarray, y_pred: np.ndarray) -> None:
         """
-        A function to plot the performance of a binary classifier with a confidence interval.
-        
-        Args:
-            true_labels (np.ndarray): True labels of the binary classifier.
-            y_pred (np.ndarray): Predicted labels of the binary classifier.
-        
+        Compute the precision-recall or specificity-recall curve with a confidence interval using bootstrapping.
+
+        Parameters:
+        true_labels: np.ndarray - array of true labels
+        y_pred: np.ndarray - array of predicted probabilities
+        n_bootstraps: int - number of bootstrap iterations
+        metric: str - "precision_recall" or "specificity_recall"
+        conf: float - confidence level
+
         Returns:
-            None
+        None - plots the curve and its confidence interval
         """
         range_label = np.arange(len(true_labels))
         bootstraps_index = np.random.choice(

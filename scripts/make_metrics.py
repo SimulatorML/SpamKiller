@@ -49,6 +49,7 @@ def job(
     recall_at_specificity = RecallAtSpecificity(
         min_value=min_value, conf=conf, n_bootstraps=n_bootstraps
     )
+
     conf_matrix = ConfusionMatrix()
     precision_recall_curve = BootstrapCurve(
         metric="precision_recall", conf=conf, n_bootstraps=n_bootstraps
@@ -82,26 +83,31 @@ def job(
 
     print(
         "lower: %s and upper: %s bounds in a confidence interval (%s) "
-        "of a recall@precision %.2f%% : %.2f" %
-        (lcb_recall_at_precision,
-        ucb_recall_at_precision,
-        conf,
-        min_value * 100,
-        max_recall_at_precision,)
+        "of a recall@precision %.2f%% : %.2f"
+        % (
+            lcb_recall_at_precision,
+            ucb_recall_at_precision,
+            conf,
+            min_value * 100,
+            max_recall_at_precision,
+        )
     )
 
     print(
-        "recall@specificity %.2f%% : %.2f" % (min_value * 100, max_recall_at_specificity)
+        "recall@specificity %.2f%% : %.2f"
+        % (min_value * 100, max_recall_at_specificity)
     )
 
     print(
         "lower: %s and upper: %s bounds in a confidence interval (%s) "
-        "of a recall@specificity %.2f%% : %.2f" %
-        (lcb_recall_at_specificity,
-        ucb_recall_at_specificity,
-        conf,
-        min_value * 100,
-        max_recall_at_specificity,)
+        "of a recall@specificity %.2f%% : %.2f"
+        % (
+            lcb_recall_at_specificity,
+            ucb_recall_at_specificity,
+            conf,
+            min_value * 100,
+            max_recall_at_specificity,
+        )
     )
 
 
