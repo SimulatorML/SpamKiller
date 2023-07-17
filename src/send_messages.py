@@ -26,6 +26,15 @@ async def handle_msg_with_args(message, bot, classifier, ADMIN_IDS, GROUP_CHAT_I
 
     if True:  # await check_user_id(message):
         logger.info(f"Message got from new user. Checking for spam")
+<<<<<<< HEAD
+=======
+        X = pd.DataFrame({
+                "text": [message.text],
+                "photo": "photo" in message,
+                "from_id": message.from_id,
+                "reply_to_message_id": "reply_to_message_id" in message,
+            })
+>>>>>>> d803275211ac375b9f4c4ab9df9f6b25d725df89
 
         try:
             reply_to_message_id = message.reply_to_message
@@ -56,7 +65,11 @@ async def handle_msg_with_args(message, bot, classifier, ADMIN_IDS, GROUP_CHAT_I
         score = scores[0]  # Extract the score from the list
         logger.info(f"Score: {score}")
 
+<<<<<<< HEAD
         treshold = 0.3
+=======
+        treshold = 0.5
+>>>>>>> d803275211ac375b9f4c4ab9df9f6b25d725df89
         if score >= treshold:
             label = "Spam"
             reason = f"score >= {treshold}"

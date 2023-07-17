@@ -2,7 +2,8 @@
 /models
 /mlruns
 /venv
-/logs/logs_from_bot.log
+/dataset
+/logs
 src/__pycache__
 .env
 .python-version
@@ -15,3 +16,4 @@ __pycache__
 admin_ids.txt
 scripts/Figure_1.png
 app/mirror_bot.py
+.dvcignore
