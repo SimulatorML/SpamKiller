@@ -73,6 +73,7 @@ def job(min_value: float = 0.99, conf: float = 0.95, n_bootstraps: int = 1) -> N
         ucb_recall_at_specificity,
     ) = recall_at_specificity.bootstrap_recall(true_labels, pred_scores)
 
+    print(threshold)
     pred_labels = np.where(pred_scores < threshold, 0, 1)
     precision_recall_curve(true_labels, pred_scores)
     specificity_recall_curve(true_labels, pred_scores)

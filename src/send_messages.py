@@ -6,9 +6,7 @@ from src.add_new_user_id import check_user_id
 
 
 # Reading only new messages from new users
-async def handle_msg_with_args(
-    message: types.Message, bot, classifier, ADMIN_IDS, GROUP_CHAT_ID
-):
+async def handle_msg_with_args(message, bot, classifier, ADMIN_IDS, GROUP_CHAT_ID):
     """
     Function for processing messages from users and sending them to the administrator if the message is suspected of spam
 
@@ -28,19 +26,37 @@ async def handle_msg_with_args(
 
     if True:  # await check_user_id(message):
         logger.info(f"Message got from new user. Checking for spam")
-        X = pd.DataFrame(
-            {
-                "text": [message.text],
-                "photo": "photo" in message,
-                "from_id": message.from_id,
-                "reply_to_message_id": "reply_to_message_id" in message,
-            }
 
+        try:
+            reply_to_message_id = message.reply_to_message
+        except:
+            reply_to_message_id = None
+
+        try:
+            photo = message.photo
+        except:
+            photo = None
+
+        if not message.text:
+            text = ""
+        else:
+            text = message.text
+        print(photo)
+        print(reply_to_message_id)
+        print([message.text])
+        print(message.from_id)
+        X = {
+            "text": text,
+            "photo": photo,
+            "from_id": message.from_id,
+            "reply_to_message_id": reply_to_message_id,
+        }
+        print(X)
         scores = classifier.predict(X)  # Wrap the message in a list
         score = scores[0]  # Extract the score from the list
         logger.info(f"Score: {score}")
 
-        treshold = 0.90
+        treshold = 0.3
         if score >= treshold:
             label = "Spam"
             reason = f"score >= {treshold}"
@@ -67,6 +83,3 @@ async def handle_msg_with_args(
             await bot.send_message(admin_id, spam_message_for_admins)
         # Send the same message to the group
         await bot.send_message(GROUP_CHAT_ID, spam_message_for_group)
-
-
-# spam_message_for_admins = f"Канал: {message.chat.title} \nАвтор: {message.from_id} \nВремя: {message.date} \n \n{message.text} \n \n{label} \nОценка: {score} \nПричина: {reason}"

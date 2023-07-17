@@ -6,7 +6,7 @@ from aiogram import Bot, Dispatcher, types
 from src.add_new_user_id import read_temp_list_with_new_user, add_new_member
 from functools import partial
 from aiogram import executor
-from src.models.rules_base_model_validation import (
+from src.models.rules_base_model_prod import (
     RuleBasedClassifier,
 )  # Импортируем наш класс
 from src.commands import add_admin, delete_admin
@@ -89,7 +89,9 @@ def handle_msg_partial():
 
 # Registering a message handler with the arguments passed to the decorator factory
 logger.info("Register handlers")
-dp.message_handler()(handle_msg_partial())  # Registering a message handler
+dp.message_handler(content_types=["any"])(
+    handle_msg_partial()
+)  # Registering a message handler
 
 
 # Processing new chat users
