@@ -3,8 +3,8 @@ from loguru import logger
 from aiogram import types
 import pandas as pd
 from src.add_new_user_id import check_user_id
-
-
+from aiogram.types import ParseMode
+from html import escape
 # Reading only new messages from new users
 async def handle_msg_with_args(message, bot, classifier, ADMIN_IDS, GROUP_CHAT_ID):
     """
@@ -26,33 +26,25 @@ async def handle_msg_with_args(message, bot, classifier, ADMIN_IDS, GROUP_CHAT_I
 
     if True:  # await check_user_id(message):
         logger.info(f"Message got from new user. Checking for spam")
-<<<<<<< HEAD
-=======
-        X = pd.DataFrame({
-                "text": [message.text],
-                "photo": "photo" in message,
-                "from_id": message.from_id,
-                "reply_to_message_id": "reply_to_message_id" in message,
-            })
->>>>>>> d803275211ac375b9f4c4ab9df9f6b25d725df89
 
         try:
             reply_to_message_id = message.reply_to_message
         except:
             reply_to_message_id = None
-
+        
         try:
             photo = message.photo
         except:
             photo = None
 
-        if not message.text:
-            text = ""
+        if message.text or message.caption:
+            text = message.text or message.caption
         else:
-            text = message.text
+            text = ""
+
         print(photo)
         print(reply_to_message_id)
-        print([message.text])
+        print([text])
         print(message.from_id)
         X = {
             "text": text,
@@ -65,34 +57,29 @@ async def handle_msg_with_args(message, bot, classifier, ADMIN_IDS, GROUP_CHAT_I
         score = scores[0]  # Extract the score from the list
         logger.info(f"Score: {score}")
 
-<<<<<<< HEAD
         treshold = 0.3
-=======
-        treshold = 0.5
->>>>>>> d803275211ac375b9f4c4ab9df9f6b25d725df89
         if score >= treshold:
-            label = "Spam"
-            reason = f"score >= {treshold}"
+            label = "<b>&#8252;&#65039; Spam DETECTED</b>"
+            reason = f"score &#62;= {treshold}"
         else:
-            label = "Not spam"
-            reason = f"score < {treshold}"
+            label = "<i>No spam detected</i>"
+            reason = f"score &#60; {treshold}"
 
         logger.info(f"The message was sent to the administrator and the group")
-
+ 
         spam_message_for_admins = (
-            f"Канал: {message.chat.title}\n"
-            + f"Автор: {message.from_id}\n"
-            + f"Время: {message.date}\n"
-            + f"\n"
-            + f"{message.text}\n"
-            + f"\n"
-            + f"{label}\n"
-            + f"Оценка: {score}\n"
-            + f"Причина: {reason}"
+            f"{(label)} <b>({score * 100}%)</b>\n"
+            + f"Канал: {(message.chat.title)}\n"
+            + f"Автор: @{(message.from_user.username)}\n"
+            + f"Время: {(message.date)}\n"
+            + "\n"
+            + f"{escape(text)}\n"
+            + "\n"
+            + f"Причина: {(reason)}\n"
         )
 
         spam_message_for_group = spam_message_for_admins
         for admin_id in ADMIN_IDS:
-            await bot.send_message(admin_id, spam_message_for_admins)
+            await bot.send_message(admin_id, spam_message_for_admins, parse_mode="HTML")
         # Send the same message to the group
-        await bot.send_message(GROUP_CHAT_ID, spam_message_for_group)
+        await bot.send_message(GROUP_CHAT_ID, spam_message_for_group, parse_mode="HTML")
