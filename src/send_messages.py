@@ -28,19 +28,18 @@ async def handle_msg_with_args(
 
     if True:  # await check_user_id(message):
         logger.info(f"Message got from new user. Checking for spam")
-        X = pd.DataFrame(
-            {
+        X = pd.DataFrame({
                 "text": [message.text],
                 "photo": "photo" in message,
                 "from_id": message.from_id,
                 "reply_to_message_id": "reply_to_message_id" in message,
-            }
+            })
 
         scores = classifier.predict(X)  # Wrap the message in a list
         score = scores[0]  # Extract the score from the list
         logger.info(f"Score: {score}")
 
-        treshold = 0.90
+        treshold = 0.5
         if score >= treshold:
             label = "Spam"
             reason = f"score >= {treshold}"
