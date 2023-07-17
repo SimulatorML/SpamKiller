@@ -6,15 +6,20 @@ from aiogram import Bot, Dispatcher, types
 from src.add_new_user_id import read_temp_list_with_new_user, add_new_member
 from functools import partial
 from aiogram import executor
-from src.models.rules_base_model_validation import RuleBasedClassifier  # Импортируем наш класс
+from src.models.rules_base_model_validation import (
+    RuleBasedClassifier,
+)  # Импортируем наш класс
 from src.commands import add_admin, delete_admin
 from src.send_messages import handle_msg_with_args
-'https://t.me/+9NoKUGYKFgw3ZDQy'
+
+"https://t.me/+9NoKUGYKFgw3ZDQy"
 
 # Load environment variables
 load_dotenv()
 
-logger.add("logs/logs_from_spam_killer.log", level="INFO")  # Add logger to file with level INFO
+logger.add(
+    "logs/logs_from_spam_killer.log", level="INFO"
+)  # Add logger to file with level INFO
 logger.info("Init bot")
 
 TOKEN = os.getenv("API_KEY_SPAM_KILLER")  # Get token from environment variable
@@ -78,7 +83,7 @@ def handle_msg_partial():
         bot=bot,
         classifier=classifier,
         ADMIN_IDS=ADMIN_IDS,
-        GROUP_CHAT_ID=TARGET_GROUP_ID
+        GROUP_CHAT_ID=TARGET_GROUP_ID,
     )  # Creating a wrapper for handle_msg, passing all the necessary arguments
 
 

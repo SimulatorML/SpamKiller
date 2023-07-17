@@ -10,9 +10,7 @@ from src.metrics.metrics import (
 )
 
 
-def job(
-    min_value: float = 0.99, conf: float = 0.95, n_bootstraps: int = 10_000
-) -> None:
+def job(min_value: float = 0.99, conf: float = 0.95, n_bootstraps: int = 1) -> None:
     """
     Runs a job to evaluate the performance of a binary classification model based on the provided parameters.
     The job reads data from a config file, sets a threshold value, and computes evaluation metrics

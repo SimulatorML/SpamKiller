@@ -25,26 +25,48 @@ async def handle_msg_with_args(
     -------
     None
     """
-    if True: #await check_user_id(message):
+
+    if True:  # await check_user_id(message):
         logger.info(f"Message got from new user. Checking for spam")
-        X = pd.DataFrame({'text': [message.text], 'photo': [message.photo]})   
+        X = pd.DataFrame(
+            {
+                "text": [message.text],
+                "photo": "photo" in message,
+                "from_id": message.from_id,
+                "reply_to_message_id": "reply_to_message_id" in message,
+            }
+
         scores = classifier.predict(X)  # Wrap the message in a list
         score = scores[0]  # Extract the score from the list
         logger.info(f"Score: {score}")
 
-        if score >= 0.90:
-            logger.info(
-                f"The message suspected of spam was sent to the administrator and the group"
-            )
-            spam_message_for_admins = f'A message suspected of spam with a probability of {int(score * 100)} percent -->"{message.text}" <-- from user {message.from_user.id}. Lable is 1'
-            spam_message_for_group = f"A message suspected of spam with a probability of {int(score * 100)} percent --> {message.text} <--. Lable is 1"
-            for admin_id in ADMIN_IDS:
-                await bot.send_message(admin_id, spam_message_for_admins)
-            # Send the same message to the group
-            await bot.send_message(GROUP_CHAT_ID, spam_message_for_group)
+        treshold = 0.90
+        if score >= treshold:
+            label = "Spam"
+            reason = f"score >= {treshold}"
         else:
-            logger.info(
-                f"The message is not suspected of spam. Sent to the administrator and the group"
-            )
-            is_not_span_message = f'This message is not suspected of spam with a probability of {int(score * 100)} percent -->"{message.text}" <-- from user {message.from_user.id}. Lable is 0'
-            await bot.send_message(GROUP_CHAT_ID, is_not_span_message)
+            label = "Not spam"
+            reason = f"score < {treshold}"
+
+        logger.info(f"The message was sent to the administrator and the group")
+
+        spam_message_for_admins = (
+            f"Канал: {message.chat.title}\n"
+            + f"Автор: {message.from_id}\n"
+            + f"Время: {message.date}\n"
+            + f"\n"
+            + f"{message.text}\n"
+            + f"\n"
+            + f"{label}\n"
+            + f"Оценка: {score}\n"
+            + f"Причина: {reason}"
+        )
+
+        spam_message_for_group = spam_message_for_admins
+        for admin_id in ADMIN_IDS:
+            await bot.send_message(admin_id, spam_message_for_admins)
+        # Send the same message to the group
+        await bot.send_message(GROUP_CHAT_ID, spam_message_for_group)
+
+
+# spam_message_for_admins = f"Канал: {message.chat.title} \nАвтор: {message.from_id} \nВремя: {message.date} \n \n{message.text} \n \n{label} \nОценка: {score} \nПричина: {reason}"
