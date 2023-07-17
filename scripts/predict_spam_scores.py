@@ -1,7 +1,7 @@
 import pandas as pd
 import yaml
 import fire
-from src.models.rule_based_model import RuleBasedClassifier
+from src.models.rules_base_model_validation import RuleBasedClassifier
 
 
 def job(Model=RuleBasedClassifier) -> None:
@@ -15,25 +15,30 @@ def job(Model=RuleBasedClassifier) -> None:
     :return: None
     :rtype: NoneType
     """
+    data_path = "data"
+
     with open("./config.yml", "r", encoding="utf8") as config_file:
         config = yaml.safe_load(config_file)
-        train_path = config["path_train"]
-        test_path = config["path_test"]
+        train_path = config["train_path"]
+        test_path = config["test_path"]
         save_path = config["labels_and_scores"]
 
-    train = pd.read_csv(train_path, sep=";")
-    test = pd.read_csv(test_path, sep=";")
+    train = pd.read_csv(f"{data_path}/{train_path}", sep=";")
+    test = pd.read_csv(f"{data_path}/{test_path}", sep=";")
 
-    # Load the model
     model = Model()
-    model.fit(train[["text", "photo"]], train["label"])
-    pred_scores = model.predict(test[["text", "photo"]])
+    model.fit(
+        train[["text", "photo", "from_id", "reply_to_message_id"]], train["label"]
+    )
+    pred_scores = model.predict(
+        test[["text", "photo", "from_id", "reply_to_message_id"]]
+    )
 
     labels_and_scores = pd.DataFrame(
         {"pred_scores": pred_scores, "label": test["label"].values}
     )
 
-    test_path.to_csv(path_save_test, sep=";", index=False)
+    labels_and_scores.to_csv(f"{data_path}/{save_path}", sep=";", index=False)
 
 
 if __name__ == "__main__":

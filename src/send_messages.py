@@ -1,5 +1,7 @@
+import os
 from loguru import logger
 from aiogram import types
+import pandas as pd
 from src.add_new_user_id import check_user_id
 
 
@@ -23,9 +25,10 @@ async def handle_msg_with_args(
     -------
     None
     """
-    if await check_user_id(message):
+    if True: #await check_user_id(message):
         logger.info(f"Message got from new user. Checking for spam")
-        scores = classifier.predict([message.text])  # Wrap the message in a list
+        X = pd.DataFrame({'text': [message.text], 'photo': [message.photo]})   
+        scores = classifier.predict(X)  # Wrap the message in a list
         score = scores[0]  # Extract the score from the list
         logger.info(f"Score: {score}")
 

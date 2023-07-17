@@ -31,12 +31,14 @@ def job(
     :rtype: None
     """
 
+    data_path = "data"
+
     with open("./config.yml", "r", encoding="utf8") as config_file:
         config = yaml.safe_load(config_file)
         labels_and_scores = config["labels_and_scores"]
 
     labels_and_scores = pd.read_csv(
-        labels_and_scores,
+        f"{data_path}/{labels_and_scores}",
         sep=";",
     )
 
@@ -58,14 +60,14 @@ def job(
         metric="specificity_recall", conf=conf, n_bootstraps=n_bootstraps
     )
 
-    threshold, max_recall_at_precision = recall_at_precision.max_recall(
+    _, max_recall_at_precision = recall_at_precision.max_recall(
         true_labels, pred_scores
     )
     (
         lcb_recall_at_precision,
         ucb_recall_at_precision,
     ) = recall_at_precision.bootstrap_recall(true_labels, pred_scores)
-    _, max_recall_at_specificity = recall_at_specificity.max_recall(
+    threshold, max_recall_at_specificity = recall_at_specificity.max_recall(
         true_labels, pred_scores
     )
     (
@@ -74,7 +76,6 @@ def job(
     ) = recall_at_specificity.bootstrap_recall(true_labels, pred_scores)
 
     pred_labels = np.where(pred_scores < threshold, 0, 1)
-
     precision_recall_curve(true_labels, pred_scores)
     specificity_recall_curve(true_labels, pred_scores)
     conf_matrix(true_labels, pred_labels)
