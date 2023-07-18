@@ -69,6 +69,7 @@ async def handle_msg_with_args(message, bot, classifier, ADMIN_IDS, GROUP_CHAT_I
  
         spam_message_for_admins = (
             f"{(label)} <b>({score * 100}%)</b>\n"
+            + "\n"
             + f"Канал: {(message.chat.title)}\n"
             + f"Автор: @{(message.from_user.username)}\n"
             + f"Время: {(message.date)}\n"
@@ -80,6 +81,17 @@ async def handle_msg_with_args(message, bot, classifier, ADMIN_IDS, GROUP_CHAT_I
 
         spam_message_for_group = spam_message_for_admins
         for admin_id in ADMIN_IDS:
-            await bot.send_message(admin_id, spam_message_for_admins, parse_mode="HTML")
+            await bot.send_message(admin_id,
+                                spam_message_for_admins,
+                                parse_mode="HTML")
         # Send the same message to the group
-        await bot.send_message(GROUP_CHAT_ID, spam_message_for_group, parse_mode="HTML")
+        if photo is None:
+            await bot.send_message(GROUP_CHAT_ID,
+                                spam_message_for_group,
+                                arse_mode="HTML")
+        else:
+            photo_id = photo[-1].file_id
+            await bot.send_photo(GROUP_CHAT_ID,
+                                photo=photo_id,
+                                caption=spam_message_for_group,
+                                parse_mode="HTML")
