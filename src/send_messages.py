@@ -78,3 +78,5 @@ async def handle_msg_with_args(message, bot, classifier, ADMIN_IDS, GROUP_CHAT_I
         await bot.send_photo(GROUP_CHAT_ID, photo=photo, caption=spam_message_for_admins, parse_mode="HTML")
         for admin_id in ADMIN_IDS:
             await bot.send_photo(admin_id, photo=photo, caption=spam_message_for_admins, parse_mode="HTML")
+    if score >= treshold:
+        await bot.delete_message(message.chat.id, message.message_id)
