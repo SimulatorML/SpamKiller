@@ -27,15 +27,15 @@ def job(Model=RuleBasedClassifier) -> None:
     test = pd.read_csv(f"{data_path}/{test_path}", sep=";")
 
     model = Model()
-    model.fit(
-        train[["text", "photo", "from_id", "reply_to_message_id"]], train["label"]
-    )
+   # model.fit(
+   #     train[["text", "photo", "from_id", "reply_to_message_id"]], train["label"]
+   # )
     pred_scores = model.predict(
-        test[["text", "photo", "from_id", "reply_to_message_id"]]
+         train[["text", "photo", "from_id", "reply_to_message_id"]]
     )
 
     labels_and_scores = pd.DataFrame(
-        {"pred_scores": pred_scores, "label": test["label"].values}
+        {"pred_scores": pred_scores, "label": train["label"].values}
     )
 
     labels_and_scores.to_csv(f"{data_path}/{save_path}", sep=";", index=False)

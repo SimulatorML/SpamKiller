@@ -46,10 +46,10 @@ class RuleBasedClassifier:
             {"name": "contains_spam_words", "check": self._check_contains_spam_words},
             {"name": "contains_photo", "check": self._check_contains_photo},
             {"name": "contains_not_spam_id", "check": self._check_not_spam_id},
-            {
-                "name": "contains_reply_to_message_id",
-                "check": self._check_reply_to_message_id,
-            },
+           # {
+           #     "name": "contains_reply_to_message_id",
+           #     "check": self._check_reply_to_message_id,
+           # },
             {
                 "name": "contains_special_characters",
                 "check": self._check_special_characters,
