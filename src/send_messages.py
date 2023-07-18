@@ -68,7 +68,7 @@ async def handle_msg_with_args(message, bot, classifier, ADMIN_IDS, GROUP_CHAT_I
         logger.info(f"The message was sent to the administrator and the group")
  
         spam_message_for_admins = (
-            f"{(label)} <b>({score * 100}%)</b>\n"
+            f"{(label)} <b>({round(score * 100, 2)}%)</b>\n"
             + "\n"
             + f"Канал: {(message.chat.title)}\n"
             + f"Автор: @{(message.from_user.username)}\n"
