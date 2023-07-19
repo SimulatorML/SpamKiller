@@ -89,8 +89,8 @@ class RuleBasedClassifier:
         logger.info("Predicting...")
         pred_scores = []
         for index in range(len(X)):
-            message = X.iloc[index, :]
-            score = self._predict_message(message)
+            "message = X.iloc[index, :]"
+            score = self._predict_message(X)
             pred_scores.append(score)
         return pred_scores
 

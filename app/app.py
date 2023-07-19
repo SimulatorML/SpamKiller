@@ -6,7 +6,7 @@ from aiogram import Bot, Dispatcher, types
 from src.add_new_user_id import read_temp_list_with_new_user, add_new_member
 from functools import partial
 from aiogram import executor
-from src.models.rules_base_model_prod import (
+from src.models.rules_base_model_validation import (
     RuleBasedClassifier,
 )  # Импортируем наш класс
 from src.commands import add_admin, delete_admin

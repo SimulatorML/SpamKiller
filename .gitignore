@@ -17,3 +17,4 @@ admin_ids.txt
 scripts/Figure_1.png
 app/mirror_bot.py
 .dvcignore
+config
