@@ -29,6 +29,16 @@ ADMIN_IDS = (
 TARGET_GROUP_ID = os.getenv(
     "TARGET_GROUP_ID"
 )  # Get target group id from environment variable (in .env file)
+AUTHORIZED_USER_IDS = (
+    os.getenv("AUTHORIZED_USER_IDS").split(",")
+    if os.getenv("AUTHORIZED_USER_IDS")
+    else []
+)
+AUTHORIZED_GROUP_IDS = (
+    os.getenv("AUTHORIZED_GROUP_IDS").split(",")
+    if os.getenv("AUTHORIZED_GROUP_IDS")
+    else []
+)  # Get admin id from environment variable (in .env file)
 
 classifier = RuleBasedClassifier()  # Initialize classifier
 
@@ -84,12 +94,16 @@ def handle_msg_partial():
         classifier=classifier,
         ADMIN_IDS=ADMIN_IDS,
         GROUP_CHAT_ID=TARGET_GROUP_ID,
+        AUTHORIZED_USER_IDS=AUTHORIZED_USER_IDS,
+        AUTHORIZED_GROUP_IDS=AUTHORIZED_GROUP_IDS,
     )  # Creating a wrapper for handle_msg, passing all the necessary arguments
 
 
 # Registering a message handler with the arguments passed to the decorator factory
 logger.info("Register handlers")
-dp.message_handler(content_types=["any"])(
+dp.message_handler(
+    content_types=["any"],
+)(
     handle_msg_partial()
 )  # Registering a message handler
 
