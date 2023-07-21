@@ -59,6 +59,10 @@ class RuleBasedClassifier:
                 "name": "contains_words_fuzzy_not_enough",
                 "check": self._check_words_fuzzy_not_enough,
             },
+            {
+                "name": "contains_сapital_letters",
+                "check": self._check_сapital_letters,
+            },
         ]
 
     def fit(self, X, y):
@@ -218,7 +222,7 @@ class RuleBasedClassifier:
             float: The calculated score based on the presence of special characters.
         """
         score = 0.0
-        pattern = "[à-üÀ-Üα-ωΑ-Ω]"
+        pattern = "[à-üÀ-Üα-ωΑ-ΩҐЄЇІґєїі]"
         result = re.search(pattern, message["text"])
         if result:
             score += 0.5
@@ -254,4 +258,31 @@ class RuleBasedClassifier:
             for word in message["text"].split():
                 if word_fuzzy_not_enough == re.sub(r"[^a-zа-я]", "", word.lower()):
                     score += 0.3
+        return score
+
+    def _check_capital_letters(self, message):
+        """
+        Calculates the score based on the presence of capital letters in the input message.
+
+        Parameters:
+            message (dict): The input message containing the text.
+
+        Returns:
+            float: The calculated score.
+
+        """
+        score = 0.0
+
+        capital_pattern = "[A-ZА-я]"
+        pattern = "[a-zA-Zа-яА-я]"
+
+        capital_letters = re.findall(capital_pattern, message["text"])
+        letters = re.findall(pattern, message["text"])
+
+        try:
+            if len(capital_letters) / len(letters) > 0.4:
+                score += 0.05
+        except ZeroDivisionError:
+            pass
+
         return score
