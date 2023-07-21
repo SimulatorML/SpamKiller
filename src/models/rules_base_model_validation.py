@@ -61,7 +61,7 @@ class RuleBasedClassifier:
             },
             {
                 "name": "contains_сapital_letters",
-                "check": self._check_сapital_letters,
+                "check": self._check_capital_letters,
             },
         ]
 
