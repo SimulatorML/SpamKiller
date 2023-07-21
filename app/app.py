@@ -29,6 +29,12 @@ ADMIN_IDS = (
 TARGET_GROUP_ID = os.getenv(
     "TARGET_GROUP_ID"
 )  # Get target group id from environment variable (in .env file)
+TARGET_SPAM_ID = os.getenv(
+    "TARGET_SPAM_ID"
+)  # Get target spam group id from environment variable (in .env file)
+TARGET_NOT_SPAM_ID = os.getenv(
+    "TARGET_NOT_SPAM_ID"
+)  # Get target not spam group id from environment variable (in .env file)
 AUTHORIZED_USER_IDS = (
     os.getenv("AUTHORIZED_USER_IDS").split(",")
     if os.getenv("AUTHORIZED_USER_IDS")
@@ -96,6 +102,8 @@ def handle_msg_partial():
         GROUP_CHAT_ID=TARGET_GROUP_ID,
         AUTHORIZED_USER_IDS=AUTHORIZED_USER_IDS,
         AUTHORIZED_GROUP_IDS=AUTHORIZED_GROUP_IDS,
+        TARGET_SPAM_ID=TARGET_SPAM_ID,
+        TARGET_NOT_SPAM_ID=TARGET_NOT_SPAM_ID,
     )  # Creating a wrapper for handle_msg, passing all the necessary arguments
 
 

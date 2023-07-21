@@ -11,6 +11,8 @@ async def handle_msg_with_args(
     GROUP_CHAT_ID,
     AUTHORIZED_USER_IDS,
     AUTHORIZED_GROUP_IDS,
+    TARGET_SPAM_ID,
+    TARGET_NOT_SPAM_ID
 ):
     """
     Function for processing messages from users and sending them to the administrator if the message is suspected of spam
@@ -85,25 +87,59 @@ async def handle_msg_with_args(
     # Send the same message to the groupы
     if photo is None:
         await bot.send_message(
-            GROUP_CHAT_ID, spam_message_for_group, parse_mode="HTML"
-        )
+                GROUP_CHAT_ID,
+                spam_message_for_group,
+                parse_mode="HTML"
+            )
         for admin_id in ADMIN_IDS:
             await bot.send_message(
                 admin_id, spam_message_for_admins, parse_mode="HTML"
             )
+
+        if score >= treshold:
+            await bot.send_message(
+                TARGET_SPAM_ID,
+                spam_message_for_admins,
+                parse_mode="HTML"
+                )
+            await bot.delete_message(
+                message.chat.id,
+                message.message_id
+                )
+        else:
+            await bot.send_message(
+                TARGET_NOT_SPAM_ID,
+                spam_message_for_admins,
+                parse_mode="HTML"
+            )
+
     else:
         await bot.send_photo(
             GROUP_CHAT_ID,
             photo=photo,
             caption=spam_message_for_admins,
-            parse_mode="HTML",
-        )
+            parse_mode="HTML"
+            )
         for admin_id in ADMIN_IDS:
             await bot.send_photo(
                 admin_id,
                 photo=photo,
                 caption=spam_message_for_admins,
-                parse_mode="HTML",
+                parse_mode="HTML"
+                )
+
+        if score >= treshold:
+            await bot.send_photo(
+            TARGET_SPAM_ID,
+            photo=photo,
+            caption=spam_message_for_admins,
+            parse_mode="HTML"
             )
-    if score >= treshold:
-        await bot.delete_message(message.chat.id, message.message_id)
+            await bot.delete_message(message.chat.id, message.message_id)
+        else:
+            await bot.send_photo(
+            TARGET_NOT_SPAM_ID,
+            photo=photo,
+            caption=spam_message_for_admins,
+            parse_mode="HTML"
+            )
