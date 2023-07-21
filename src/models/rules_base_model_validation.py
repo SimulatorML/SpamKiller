@@ -273,8 +273,8 @@ class RuleBasedClassifier:
         """
         score = 0.0
 
-        capital_pattern = "[A-ZА-я]"
-        pattern = "[a-zA-Zа-яА-я]"
+        capital_pattern = "[A-ZА-Я]"
+        pattern = "[a-zA-Zа-яА-Я]"
 
         capital_letters = re.findall(capital_pattern, message["text"])
         letters = re.findall(pattern, message["text"])
