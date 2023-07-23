@@ -93,8 +93,8 @@ class RuleBasedClassifier:
         logger.info("Predicting...")
         pred_scores = []
         for index in range(len(X)):
-            "message = X.iloc[index, :]"
-            score = self._predict_message(X)
+            message = X.iloc[index, :]
+            score = self._predict_message(message)
             pred_scores.append(score)
         return pred_scores
 
@@ -208,7 +208,7 @@ class RuleBasedClassifier:
         """
         score = 0.0
         if message["from_id"] in self.not_spam_id:
-            score -= 3.0
+            score -= 0.5
         return score
 
     def _check_special_characters(self, message):

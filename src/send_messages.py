@@ -12,7 +12,7 @@ async def handle_msg_with_args(
     AUTHORIZED_USER_IDS,
     AUTHORIZED_GROUP_IDS,
     TARGET_SPAM_ID,
-    TARGET_NOT_SPAM_ID
+    TARGET_NOT_SPAM_ID,
 ):
     """
     Function for processing messages from users and sending them to the administrator if the message is suspected of spam
@@ -31,13 +31,10 @@ async def handle_msg_with_args(
     """
 
     # await check_user_id(message):
-    print(str(message.from_id) in AUTHORIZED_GROUP_IDS)
-    print(message.from_id)
-    print(AUTHORIZED_GROUP_IDS)
-   # if (
-   #     str(message.chat.id) in AUTHORIZED_GROUP_IDS
-   #     or str(message.from_id) in AUTHORIZED_USER_IDS
-   # ):
+    # if (
+    #     str(message.chat.id) in AUTHORIZED_GROUP_IDS
+    #     or str(message.from_id) in AUTHORIZED_USER_IDS
+    # ):
     logger.info(f"Message got from new user. Checking for spam")
 
     reply_to_message_id = (
@@ -45,6 +42,7 @@ async def handle_msg_with_args(
     )
     photo = message.photo[-1].file_id if message.photo else None
     text = message.text or message.caption or ""
+    print(message)
     print(message.chat.id)
     print(photo)
     print(reply_to_message_id)
@@ -58,8 +56,7 @@ async def handle_msg_with_args(
         "reply_to_message_id": reply_to_message_id,
     }
     print(X)
-    scores = classifier.predict(X)  # Wrap the message in a list
-    score = scores[0]  # Extract the score from the list
+    score = classifier.predict(X)
     logger.info(f"Score: {score}")
 
     treshold = 0.3
@@ -86,31 +83,18 @@ async def handle_msg_with_args(
     spam_message_for_group = spam_message_for_admins
     # Send the same message to the groupы
     if photo is None:
-        await bot.send_message(
-                GROUP_CHAT_ID,
-                spam_message_for_group,
-                parse_mode="HTML"
-            )
+        await bot.send_message(GROUP_CHAT_ID, spam_message_for_group, parse_mode="HTML")
         for admin_id in ADMIN_IDS:
-            await bot.send_message(
-                admin_id, spam_message_for_admins, parse_mode="HTML"
-            )
+            await bot.send_message(admin_id, spam_message_for_admins, parse_mode="HTML")
 
         if score >= treshold:
             await bot.send_message(
-                TARGET_SPAM_ID,
-                spam_message_for_admins,
-                parse_mode="HTML"
-                )
-            await bot.delete_message(
-                message.chat.id,
-                message.message_id
-                )
+                TARGET_SPAM_ID, spam_message_for_admins, parse_mode="HTML"
+            )
+            await bot.delete_message(message.chat.id, message.message_id)
         else:
             await bot.send_message(
-                TARGET_NOT_SPAM_ID,
-                spam_message_for_admins,
-                parse_mode="HTML"
+                TARGET_NOT_SPAM_ID, spam_message_for_admins, parse_mode="HTML"
             )
 
     else:
@@ -118,28 +102,28 @@ async def handle_msg_with_args(
             GROUP_CHAT_ID,
             photo=photo,
             caption=spam_message_for_admins,
-            parse_mode="HTML"
-            )
+            parse_mode="HTML",
+        )
         for admin_id in ADMIN_IDS:
             await bot.send_photo(
                 admin_id,
                 photo=photo,
                 caption=spam_message_for_admins,
-                parse_mode="HTML"
-                )
+                parse_mode="HTML",
+            )
 
         if score >= treshold:
             await bot.send_photo(
-            TARGET_SPAM_ID,
-            photo=photo,
-            caption=spam_message_for_admins,
-            parse_mode="HTML"
+                TARGET_SPAM_ID,
+                photo=photo,
+                caption=spam_message_for_admins,
+                parse_mode="HTML",
             )
             await bot.delete_message(message.chat.id, message.message_id)
         else:
             await bot.send_photo(
-            TARGET_NOT_SPAM_ID,
-            photo=photo,
-            caption=spam_message_for_admins,
-            parse_mode="HTML"
+                TARGET_NOT_SPAM_ID,
+                photo=photo,
+                caption=spam_message_for_admins,
+                parse_mode="HTML",
             )

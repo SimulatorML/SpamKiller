@@ -23,6 +23,7 @@ class RuleBasedClassifier:
             self.path_stop_words = config["stop_words"]
             self.path_dangerous_words = config["dangerous_words"]
             self.path_spam_words = config["spam_words"]
+            self.path_words_fuzzy_not_enough = config["words_fuzzy_not_enough"]
             self.path_not_spam_id = config["path_not_spam_id"]
 
         self.stop_words = pd.read_csv(self.path_stop_words, sep=";")[
@@ -34,8 +35,11 @@ class RuleBasedClassifier:
         self.spam_words = pd.read_csv(self.path_spam_words, sep=";")[
             "spam_words"
         ].tolist()
+        self.words_fuzzy_not_enough = pd.read_csv(
+            self.path_words_fuzzy_not_enough, sep=";"
+        )["words_fuzzy_not_enough"].tolist()
         self.not_spam_id = pd.read_csv(self.path_not_spam_id, sep=";")[
-            "from_id"
+            "not_spam_id"
         ].tolist()
 
         self.rules = [
@@ -48,30 +52,20 @@ class RuleBasedClassifier:
             {"name": "contains_spam_words", "check": self._check_contains_spam_words},
             {"name": "contains_photo", "check": self._check_contains_photo},
             {"name": "contains_not_spam_id", "check": self._check_not_spam_id},
-          #  {
-          #      "name": "contains_reply_to_message_id",
-          #      "check": self._check_reply_to_message_id,
-          #  },
             {
                 "name": "contains_special_characters",
                 "check": self._check_special_characters,
             },
+            {"name": "check_len_message", "check": self._check_len_message},
+            {
+                "name": "contains_words_fuzzy_not_enough",
+                "check": self._check_words_fuzzy_not_enough,
+            },
+            {
+                "name": "contains_сapital_letters",
+                "check": self._check_capital_letters,
+            },
         ]
-
-    def fit(self, X, y):
-        """
-        Fits the model to the training data.
-
-        Parameters:
-            X: The input features of shape (n_samples, n_features).
-            y: The target labels of shape (n_samples,).
-
-        Returns:
-            None
-        """
-        mask_not_spam = y == 0
-        self.not_spam_id = X[mask_not_spam]["from_id"].unique()
-        return None
 
     def predict(self, X):
         """
@@ -84,26 +78,9 @@ class RuleBasedClassifier:
             numpy array: An array of predicted scores for the input data.
         """
         logger.info("Predicting...")
-        pred_scores = []
-        for index in range(len(X)):
-            "message = X.iloc[index, :]"
-            score = self._predict_message(X)
-            pred_scores.append(score)
-        return pred_scores
-
-    def _predict_message(self, message):
-        """
-        Calculate the total score for a given message by applying a set of rules.
-
-        Parameters:
-            message (any): The message to be evaluated.
-
-        Returns:
-            float: The total score of the message based on the rules.
-        """
         total_score = 0.0
         for rule in self.rules:
-            total_score += rule["check"](message)
+            total_score += rule["check"](X)
         return total_score
 
     def _check_contains_link(self, message):
@@ -135,9 +112,10 @@ class RuleBasedClassifier:
         Returns:
             float: The score representing the presence of stop words in the message.
         """
+
         score = 0.0
-        for word in message["text"].split():
-            if word.lower() in self.stop_words:
+        for words in self.stop_words:
+            if fuzz.token_set_ratio(words, message["text"].lower()) >= 70:
                 score += 0.30
         return score
 
@@ -152,8 +130,8 @@ class RuleBasedClassifier:
             float: The score calculated based on the number of dangerous words found.
         """
         score = 0.0
-        for word in message["text"].split():
-            if word.lower() in self.dangerous_words:
+        for words in self.dangerous_words:
+            if fuzz.token_set_ratio(words, message["text"].lower()) >= 70:
                 score += 0.15
         return score
 
@@ -169,8 +147,8 @@ class RuleBasedClassifier:
         """
         score = 0.0
         for words in self.spam_words:
-            if fuzz.partial_ratio(words, message["text"].lower()) >= 80:
-                score += 0.50
+            if fuzz.token_set_ratio(words, message["text"].lower()) >= 70:
+                score += 0.5
         return score
 
     def _check_contains_photo(self, message):
@@ -199,23 +177,10 @@ class RuleBasedClassifier:
             float: The spam score of the message. If the `from_id` is in the `not_spam_id` list, the score is decreased by 1.0.
         """
         score = 0.0
+        print(message["from_id"])
+        print(self.not_spam_id)
         if message["from_id"] in self.not_spam_id:
-            score -= 1.0
-        return score
-
-    def _check_reply_to_message_id(self, message):
-        """
-        Checks if the given message has a reply_to_message_id and returns a score.
-
-        Args:
-            message (dict): The message to check.
-
-        Returns:
-            float: The score calculated based on the presence of reply_to_message_id.
-        """
-        score = 0.0
-        if message["reply_to_message_id"]:
-            score -= 1.0
+            score -= 0.5
         return score
 
     def _check_special_characters(self, message):
@@ -229,8 +194,67 @@ class RuleBasedClassifier:
             float: The calculated score based on the presence of special characters.
         """
         score = 0.0
-        pattern = r"[α-ωΑ-Ω]"
+        pattern = "[à-üÀ-Üα-ωΑ-ΩҐЄЇІґєїі]"
         result = re.search(pattern, message["text"])
         if result:
-            score += 0.3
+            score += 0.5
+        return score
+
+    def _check_len_message(self, message):
+        """
+        Calculate the score for the length of the message.
+
+        Parameters:
+            message (dict): A dictionary containing the message text.
+
+        Returns:
+            float: The score for the length of the message.
+        """
+        score = 0.0
+        if len(message["text"]) < 5:
+            score -= 0.60
+        return score
+
+    def _check_words_fuzzy_not_enough(self, message):
+        """
+        Calculate the score for a given message based on the presence of words in the 'words_fuzzy_not_enough' list.
+
+        Parameters:
+            message (dict): A dictionary containing the message text.
+
+        Returns:
+            float: The calculated score based on the presence of words from 'words_fuzzy_not_enough' list in the message text.
+        """
+        score = 0.0
+        for word_fuzzy_not_enough in self.words_fuzzy_not_enough:
+            for word in message["text"].split():
+                if word_fuzzy_not_enough == re.sub(r"[^a-zа-я]", "", word.lower()):
+                    score += 0.3
+        return score
+
+    def _check_capital_letters(self, message):
+        """
+        Calculates the score based on the presence of capital letters in the input message.
+
+        Parameters:
+            message (dict): The input message containing the text.
+
+        Returns:
+            float: The calculated score.
+
+        """
+        score = 0.0
+
+        capital_pattern = "[A-ZА-Я]"
+        pattern = "[a-zA-Zа-яА-Я]"
+
+        capital_letters = re.findall(capital_pattern, message["text"])
+        letters = re.findall(pattern, message["text"])
+
+        try:
+            if len(capital_letters) / len(letters) > 0.4:
+                score += 0.05
+        except ZeroDivisionError:
+            pass
+
         return score

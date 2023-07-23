@@ -1,17 +1,35 @@
+import re
 import yaml
 import pandas as pd
+import fire
 
 
-with open("./config.yml", "r", encoding="utf8") as config_file:
-    config = yaml.safe_load(config_file)
+def job():
+    """
+    Reads the config file and extracts the necessary information to generate a CSV file with the not spam IDs.
 
-    path_not_spam_id = config["path_not_spam_id"]
+    Returns:
+        None
+    """
+    with open("./config.yml", "r", encoding="utf8") as config_file:
+        config = yaml.safe_load(config_file)
 
-    train_path = config["train_path"]
+        path_not_spam_id = config["path_not_spam_id"]
 
-X = pd.read_csv(f"data/{train_path}", sep=";")
+        not_spam_path = config["not_spam_path"]
 
-mask_not_spam = X["label"] == 0
-z = X[mask_not_spam]["from_id"].unique()
+    not_spam_csv = pd.read_csv(f"data/{not_spam_path}", sep=";")
 
-pd.DataFrame({"from_id": z}).to_csv(f"{path_not_spam_id}", sep=";")
+    mask_not_spam = not_spam_csv["label"] == 0
+    list_not_spam = not_spam_csv[mask_not_spam]["from_id"].unique().tolist()
+    list_not_spam_id = [
+        "".join(re.findall("[0-9]", str(from_id))) for from_id in list_not_spam
+    ]
+
+    pd.DataFrame({"not_spam_id": list_not_spam_id}).to_csv(
+        f"{path_not_spam_id}", sep=";"
+    )
+
+
+if __name__ == "__main__":
+    fire.Fire(job)
