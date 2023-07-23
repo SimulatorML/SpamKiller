@@ -244,7 +244,7 @@ class RuleBasedClassifier:
         result = re.findall(pattern, message["text"])
         if result:
             score += 0.5
-            feature = f'- Греческие буквы в сообщении ({", ".join(result[:3])})\n'
+            feature = f'- Греческие/Украинские буквы в сообщении ({", ".join(result[:3])})\n'
         return score, feature
 
     def _check_len_message(self, message):
