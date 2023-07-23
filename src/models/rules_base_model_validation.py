@@ -153,7 +153,7 @@ class RuleBasedClassifier:
         for words in self.stop_words:
             if fuzz.token_set_ratio(words, message["text"].lower()) >= 70:
                 score += 0.30
-                feature += f'- {words} in message\n'
+                feature += f'- В сообщении содержится: "{words}"\n'
         return score, feature
 
     def _check_contains_dangerous_words(self, message):
