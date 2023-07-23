@@ -77,30 +77,35 @@ class RuleBasedClassifier:
         Returns:
             numpy array: An array of predicted scores for the input data.
         """
+
         logger.info("Predicting...")
         total_score = 0.0
+        name_features = ''
         for rule in self.rules:
-            total_score += rule["check"](X)
-        return total_score
+            temp_score, temp_name_features = rule["check"](X)
+            total_score += temp_score
+            name_features += temp_name_features
+        return total_score, name_features
 
     def _check_contains_link(self, message):
-        """
-        Check if the given message contains a link and return a score indicating the presence of a link.
-
-        :param message: The message to be checked.
-        :type message: dict
-
-        :return: The score indicating the presence of a link.
-        :rtype: float
-        """
         score = 0.0
-        if (len(message["text"].split()) == 1) and (
-            "https://t.me" in message["text"]
-            or "t.me" in message["text"]
-            or "telegra.ph/" in message["text"]
-        ):
+        feature = ''
+
+        # Regular expression pattern to match URLs
+        url_pattern = r"(?i)\b((?:https?://|www\d{0,3}[.]|telegram[.]me/|t[.]me/|telegra[.]ph/)[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/)))"
+
+        # Search for URLs in the message text
+        urls = re.findall(url_pattern, message["text"])
+        
+        # Check if any found urls are internal Telegram links
+        internal_links = [url for url in urls if 't.me' in url[0] or 'telegra.ph/' in url[0]]
+        
+        if internal_links:
             score += 0.15
-        return score
+            feature = "- В сообщении содержится telegram ссылка\n"
+
+        return score, feature
+
 
     def _check_contains_stop_word(self, message):
         """
@@ -114,10 +119,12 @@ class RuleBasedClassifier:
         """
 
         score = 0.0
+        feature = ''
         for words in self.stop_words:
             if fuzz.token_set_ratio(words, message["text"].lower()) >= 70:
                 score += 0.30
-        return score
+                feature += f'- {words} in message\n'
+        return score, feature
 
     def _check_contains_dangerous_words(self, message):
         """
@@ -130,10 +137,12 @@ class RuleBasedClassifier:
             float: The score calculated based on the number of dangerous words found.
         """
         score = 0.0
+        feature = ''
         for words in self.dangerous_words:
             if fuzz.token_set_ratio(words, message["text"].lower()) >= 70:
                 score += 0.15
-        return score
+                feature += f'- В сообщении содержится: "{words}"\n'
+        return score, feature
 
     def _check_contains_spam_words(self, message):
         """
@@ -146,10 +155,12 @@ class RuleBasedClassifier:
             float: The score, which is incremented by 1.0 if the phrase is found.
         """
         score = 0.0
+        feature = ''
         for words in self.spam_words:
             if fuzz.token_set_ratio(words, message["text"].lower()) >= 70:
                 score += 0.5
-        return score
+                feature += f'- В сообщении содержится: "{words}"\n'
+        return score, feature
 
     def _check_contains_photo(self, message):
         """
@@ -162,9 +173,11 @@ class RuleBasedClassifier:
             float: The score based on whether the message contains a photo.
         """
         score = 0.0
+        feature = ''
         if message["photo"]:
             score += 0.15
-        return score
+            feature = '- В сообщении содержится фотография\n'
+        return score, feature
 
     def _check_not_spam_id(self, message):
         """
@@ -179,9 +192,11 @@ class RuleBasedClassifier:
         score = 0.0
         print(message["from_id"])
         print(self.not_spam_id)
+        feature = ''
         if message["from_id"] in self.not_spam_id:
-            score -= 0.5
-        return score
+            score -= 0.25
+            feature = '- Пользователь ранее не писал спам\n'
+        return score, feature
 
     def _check_special_characters(self, message):
         """
@@ -195,10 +210,12 @@ class RuleBasedClassifier:
         """
         score = 0.0
         pattern = "[à-üÀ-Üα-ωΑ-ΩҐЄЇІґєїі]"
-        result = re.search(pattern, message["text"])
+        feature = ''
+        result = re.findall(pattern, message["text"])
         if result:
             score += 0.5
-        return score
+            feature = f'- Греческие буквы в сообщении ({", ".join(result[:3])})\n'
+        return score, feature
 
     def _check_len_message(self, message):
         """
@@ -211,9 +228,11 @@ class RuleBasedClassifier:
             float: The score for the length of the message.
         """
         score = 0.0
+        feature = ''
         if len(message["text"]) < 5:
             score -= 0.60
-        return score
+            feature = '- Сообщение чересчур короткое'
+        return score, feature
 
     def _check_words_fuzzy_not_enough(self, message):
         """
@@ -226,11 +245,12 @@ class RuleBasedClassifier:
             float: The calculated score based on the presence of words from 'words_fuzzy_not_enough' list in the message text.
         """
         score = 0.0
+        feature = ''
         for word_fuzzy_not_enough in self.words_fuzzy_not_enough:
             for word in message["text"].split():
                 if word_fuzzy_not_enough == re.sub(r"[^a-zа-я]", "", word.lower()):
                     score += 0.3
-        return score
+        return score, feature
 
     def _check_capital_letters(self, message):
         """
@@ -250,11 +270,12 @@ class RuleBasedClassifier:
 
         capital_letters = re.findall(capital_pattern, message["text"])
         letters = re.findall(pattern, message["text"])
-
+        feature = ''
         try:
             if len(capital_letters) / len(letters) > 0.4:
-                score += 0.05
+                score += 0.3
+                feature = '- Большая концентрация заглавных букв'
         except ZeroDivisionError:
             pass
 
-        return score
+        return score, feature

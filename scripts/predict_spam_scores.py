@@ -30,7 +30,7 @@ def job(Model=RuleBasedClassifier) -> None:
     model.fit(
         train[["text", "photo", "from_id", "reply_to_message_id"]], train["label"]
     )
-    pred_scores = model.predict(
+    pred_scores, features_ = model.predict(
         test[["text", "photo", "from_id", "reply_to_message_id"]]
     )
 

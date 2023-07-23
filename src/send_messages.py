@@ -56,7 +56,7 @@ async def handle_msg_with_args(
         "reply_to_message_id": reply_to_message_id,
     }
     print(X)
-    score = classifier.predict(X)
+    score, features = classifier.predict(X)
     logger.info(f"Score: {score}")
 
     treshold = 0.3
@@ -68,22 +68,38 @@ async def handle_msg_with_args(
         reason = f"score &#60; {treshold}"
 
     logger.info("The message was sent to the administrator and the group")
+    if len(features.split('-')) > 2:
+        spam_message_for_admins = (
+            f"{(label)} <b>({round(score * 100, 2)}%)</b>\n"
+            + "\n"
+            + f"Канал: {(message.chat.title)}\n"
+            + f"Автор: @{(message.from_user.username)}\n"
+            + f"Время: {(message.date)}\n"
+            + "\n"
+            + f"{escape(text)}\n"
+            + "\n"
+            + "Причины:\n"
+            + features
+        )
+    else:
+        spam_message_for_admins = (
+            f"{(label)} <b>({round(score * 100, 2)}%)</b>\n"
+            + "\n"
+            + f"Канал: {(message.chat.title)}\n"
+            + f"Автор: @{(message.from_user.username)}\n"
+            + f"Время: {(message.date)}\n"
+            + "\n"
+            + f"{escape(text)}\n"
+            + "\n"
+            + "Причина:\n"
+            + features
+        )
 
-    spam_message_for_admins = (
-        f"{(label)} <b>({round(score * 100, 2)}%)</b>\n"
-        + "\n"
-        + f"Канал: {(message.chat.title)}\n"
-        + f"Автор: @{(message.from_user.username)}\n"
-        + f"Время: {(message.date)}\n"
-        + "\n"
-        + f"{escape(text)}\n"
-        + "\n"
-        + f"Причина: {(reason)}\n"
-    )
     spam_message_for_group = spam_message_for_admins
     # Send the same message to the groupы
     if photo is None:
-        await bot.send_message(GROUP_CHAT_ID, spam_message_for_group, parse_mode="HTML")
+        if score >= 0.1:
+            await bot.send_message(GROUP_CHAT_ID, spam_message_for_group, parse_mode="HTML")
         for admin_id in ADMIN_IDS:
             await bot.send_message(admin_id, spam_message_for_admins, parse_mode="HTML")
 
@@ -98,12 +114,13 @@ async def handle_msg_with_args(
             )
 
     else:
-        await bot.send_photo(
-            GROUP_CHAT_ID,
-            photo=photo,
-            caption=spam_message_for_admins,
-            parse_mode="HTML",
-        )
+        if score >= 0.1:
+            await bot.send_photo(
+                GROUP_CHAT_ID,
+                photo=photo,
+                caption=spam_message_for_admins,
+                parse_mode="HTML",
+            )
         for admin_id in ADMIN_IDS:
             await bot.send_photo(
                 admin_id,
