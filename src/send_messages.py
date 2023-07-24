@@ -68,14 +68,15 @@ async def handle_msg_with_args(
         text = text[:600] + '...'
     logger.info("The message was sent to the administrator and the group")
     if len(features.split('-')) > 2:
-        spam_message_for_admins = (
+            spam_message_for_admins = (
             f"{(label)} <b>({round(score * 100, 2)}%)</b>\n"
             + "\n"
             + f"Канал: {(message.chat.title)}\n"
             + f"Автор: @{(message.from_user.username)}\n"
             + f"Время: {(message.date)}\n"
-            + "\n"
+            + '\n"""\n'
             + f"{escape(text)}\n"
+            + '"""\n'
             + "\n"
             + "Причины:\n"
             + features
@@ -87,8 +88,9 @@ async def handle_msg_with_args(
             + f"Канал: {(message.chat.title)}\n"
             + f"Автор: @{(message.from_user.username)}\n"
             + f"Время: {(message.date)}\n"
-            + "\n"
+            + '\n"""\n'
             + f"{escape(text)}\n"
+            + '"""\n'
             + "\n"
             + "Причина:\n"
             + features
