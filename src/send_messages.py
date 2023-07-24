@@ -62,11 +62,10 @@ async def handle_msg_with_args(
     treshold = 0.3
     if score >= treshold:
         label = "<b>&#8252;&#65039; Spam DETECTED</b>"
-        reason = f"score &#62;= {treshold}"
     else:
         label = "<i>No spam detected</i>"
-        reason = f"score &#60; {treshold}"
-
+    if len(text) > 600:
+        text = text[:600] + '...'
     logger.info("The message was sent to the administrator and the group")
     if len(features.split('-')) > 2:
         spam_message_for_admins = (
