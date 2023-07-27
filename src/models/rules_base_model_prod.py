@@ -230,7 +230,7 @@ class RuleBasedClassifier:
         score = 0.0
         feature = ''
         if len(message["text"]) < 5:
-            score -= 0.60
+            score += 0.1
             feature = '- Сообщение чересчур короткое'
         return score, feature
 
@@ -273,7 +273,7 @@ class RuleBasedClassifier:
         feature = ''
         try:
             if len(capital_letters) / len(letters) > 0.4:
-                score += 0.3
+                score += 0.15
                 feature = '- Большая концентрация заглавных букв'
         except ZeroDivisionError:
             pass

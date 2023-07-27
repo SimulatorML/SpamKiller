@@ -37,7 +37,6 @@ class RuleBasedClassifier:
         self.words_fuzzy_not_enough = pd.read_csv(
             self.path_words_fuzzy_not_enough, sep=";"
         )["words_fuzzy_not_enough"].tolist()
-
         self.not_spam_id = []
 
         self.rules = [
@@ -260,7 +259,7 @@ class RuleBasedClassifier:
         score = 0.0
         feature = ''
         if len(message["text"]) < 5:
-            score -= 0.60
+            score += 0.1
             feature = '- Сообщение чересчур короткое'
         return score, feature
 
@@ -303,7 +302,7 @@ class RuleBasedClassifier:
         feature = ''
         try:
             if len(capital_letters) / len(letters) > 0.5:
-                score += 0.3
+                score += 0.15
                 feature = '- Большая концентрация заглавных букв'
         except ZeroDivisionError:
             pass

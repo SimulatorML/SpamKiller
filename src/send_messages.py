@@ -42,6 +42,7 @@ async def handle_msg_with_args(
     )
     photo = message.photo[-1].file_id if message.photo else None
     text = message.text or message.caption or ""
+    administrators = await bot.get_chat_administrators(message.chat.id)
     print(message)
     print(message.chat.id)
     print(photo)
@@ -58,7 +59,10 @@ async def handle_msg_with_args(
     print(X)
     score, features = classifier.predict(X)
     logger.info(f"Score: {score}")
-
+    for administrator in administrators:
+        if administrator.user.id == message.from_user.id:
+            features = '- Админов нельзя трогать. Они хорошие'
+            score -= 10
     treshold = 0.3
     if score >= treshold:
         label = "<b>&#8252;&#65039; Spam DETECTED</b>"
