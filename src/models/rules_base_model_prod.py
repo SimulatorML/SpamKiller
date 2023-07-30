@@ -102,7 +102,7 @@ class RuleBasedClassifier:
         
         if internal_links:
             score += 0.15
-            feature = "- В сообщении содержится telegram ссылка\n"
+            feature = "[+0.15] - В сообщении содержится telegram ссылка\n"
 
         return score, feature
 
@@ -121,9 +121,9 @@ class RuleBasedClassifier:
         score = 0.0
         feature = ''
         for words in self.stop_words:
-            if fuzz.token_set_ratio(words, message["text"].lower()) >= 70:
+            if fuzz.token_set_ratio(words, message["text"].lower()) >= 80:
                 score += 0.30
-                feature += f'- В сообщении содержится: "{words}"\n'
+                feature += f'[+0.3] - В сообщении содержится: "{words}"\n'
         return score, feature
 
     def _check_contains_dangerous_words(self, message):
@@ -139,9 +139,9 @@ class RuleBasedClassifier:
         score = 0.0
         feature = ''
         for words in self.dangerous_words:
-            if fuzz.token_set_ratio(words, message["text"].lower()) >= 70:
+            if fuzz.token_set_ratio(words, message["text"].lower()) >= 80:
                 score += 0.15
-                feature += f'- В сообщении содержится: "{words}"\n'
+                feature += f'[+0.15] - В сообщении содержится: "{words}"\n'
         return score, feature
 
     def _check_contains_spam_words(self, message):
@@ -157,9 +157,9 @@ class RuleBasedClassifier:
         score = 0.0
         feature = ''
         for words in self.spam_words:
-            if fuzz.token_set_ratio(words, message["text"].lower()) >= 70:
+            if fuzz.token_set_ratio(words, message["text"].lower()) >= 80:
                 score += 0.5
-                feature += f'- В сообщении содержится: "{words}"\n'
+                feature += f'[+0.5] - В сообщении содержится: "{words}"\n'
         return score, feature
 
     def _check_contains_photo(self, message):
@@ -176,7 +176,7 @@ class RuleBasedClassifier:
         feature = ''
         if message["photo"]:
             score += 0.15
-            feature = '- В сообщении содержится фотография\n'
+            feature = '[+0.15] - В сообщении содержится фотография\n'
         return score, feature
 
     def _check_not_spam_id(self, message):
@@ -194,8 +194,8 @@ class RuleBasedClassifier:
         print(self.not_spam_id)
         feature = ''
         if message["from_id"] in self.not_spam_id:
-            score -= 0.25
-            feature = '- Пользователь ранее не писал спам\n'
+            score -= 0.5
+            feature = '[-0.5] - Пользователь ранее не писал спам\n'
         return score, feature
 
     def _check_special_characters(self, message):
@@ -214,7 +214,7 @@ class RuleBasedClassifier:
         result = re.findall(pattern, message["text"])
         if result:
             score += 0.5
-            feature = f'- Греческие/Украинские буквы в сообщении ({", ".join(result[:3])})\n'
+            feature = f'[+0.5] - Греческие/Украинские буквы в сообщении ({", ".join(result[:3])})\n'
         return score, feature
 
     def _check_len_message(self, message):
@@ -231,7 +231,7 @@ class RuleBasedClassifier:
         feature = ''
         if len(message["text"]) < 5:
             score += 0.1
-            feature = '- Сообщение чересчур короткое'
+            feature = '[+0.1] - Сообщение чересчур короткое'
         return score, feature
 
     def _check_words_fuzzy_not_enough(self, message):
@@ -274,7 +274,7 @@ class RuleBasedClassifier:
         try:
             if len(capital_letters) / len(letters) > 0.4:
                 score += 0.15
-                feature = '- Большая концентрация заглавных букв'
+                feature = '[+0.15] - Большая концентрация заглавных букв'
         except ZeroDivisionError:
             pass
 

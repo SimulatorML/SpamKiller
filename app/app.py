@@ -32,6 +32,9 @@ TARGET_GROUP_ID = os.getenv(
 TARGET_SPAM_ID = os.getenv(
     "TARGET_SPAM_ID"
 )  # Get target spam group id from environment variable (in .env file)
+WHITELIST_ADMINS = os.getenv(
+    "WHITELIST_ADMINS"
+).split(',')  # Get target WHITELIST_ADMINS from environment variable (in .env file)
 TARGET_NOT_SPAM_ID = os.getenv(
     "TARGET_NOT_SPAM_ID"
 )  # Get target not spam group id from environment variable (in .env file)
@@ -104,6 +107,7 @@ def handle_msg_partial():
         AUTHORIZED_GROUP_IDS=AUTHORIZED_GROUP_IDS,
         TARGET_SPAM_ID=TARGET_SPAM_ID,
         TARGET_NOT_SPAM_ID=TARGET_NOT_SPAM_ID,
+        WHITELIST_ADMINS=WHITELIST_ADMINS
     )  # Creating a wrapper for handle_msg, passing all the necessary arguments
 
 

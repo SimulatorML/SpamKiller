@@ -13,6 +13,7 @@ async def handle_msg_with_args(
     AUTHORIZED_GROUP_IDS,
     TARGET_SPAM_ID,
     TARGET_NOT_SPAM_ID,
+    WHITELIST_ADMINS,
 ):
     """
     Function for processing messages from users and sending them to the administrator if the message is suspected of spam
@@ -59,11 +60,13 @@ async def handle_msg_with_args(
     print(X)
     score, features = classifier.predict(X)
     logger.info(f"Score: {score}")
+
     for administrator in administrators:
-        if administrator.user.id == message.from_user.id or message.from_user.id == -1001430200876:
-            features = '- Админов нельзя трогать. Они хорошие'
-            score -= 10
-    treshold = 0.3
+        if administrator.user.id == message.from_user.id or message.from_user.id in WHITELIST_ADMINS:
+            features += '\n- Админов нельзя трогать. Они хорошие'
+            score = 0
+
+    treshold = 0.25
     if score >= treshold:
         label = "<b>&#8252;&#65039; Spam DETECTED</b>"
     else:
