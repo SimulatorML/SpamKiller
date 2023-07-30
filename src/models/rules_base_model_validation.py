@@ -115,7 +115,27 @@ class RuleBasedClassifier:
             temp_score, temp_name_features = rule["check"](message)
             total_score += temp_score
             name_features += temp_name_features
-        return total_score, name_features
+        total_score_normalized = self._normalize_score(total_score, threshold=1)
+        return total_score_normalized, name_features
+    
+    def _normalize_score(self, score, threshold):
+        """
+        Normalize the score to a range from 0 to 1 using a threshold value.
+
+        Parameters:
+            score (float): The input score.
+            threshold (float): The threshold value above which the score is considered maximum (1).
+
+        Returns:
+            float: The normalized score.
+        """
+        if score >= threshold:
+            normalized_score = 1.0
+        elif score < 0:
+            normalized_score = 0
+        else:
+            normalized_score = score / threshold
+        return normalized_score
 
     def _check_contains_link(self, message):
         score = 0.0
