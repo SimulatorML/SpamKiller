@@ -34,7 +34,8 @@ TARGET_SPAM_ID = os.getenv(
 )  # Get target spam group id from environment variable (in .env file)
 WHITELIST_ADMINS = os.getenv(
     "WHITELIST_ADMINS"
-).split(',')  # Get target WHITELIST_ADMINS from environment variable (in .env file)
+).split(',')
+WHITELIST_ADMINS = [int(id) for id in WHITELIST_ADMINS]  # Get target WHITELIST_ADMINS from environment variable (in .env file)
 TARGET_NOT_SPAM_ID = os.getenv(
     "TARGET_NOT_SPAM_ID"
 )  # Get target not spam group id from environment variable (in .env file)
