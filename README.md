@@ -14,7 +14,7 @@ This version of the bot uses a primitive model based on heuristic rules. This is
 
 # Get Started
 ## Dependencies
-* [DVC](https://dvc.org/doc/install)
+* [DVC](https://dvc.org/doc/install)\
 Install the required Python libraries and download the data:
 ```
 pip install -r requirements.txt
