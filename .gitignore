@@ -18,3 +18,6 @@ scripts/Figure_1.png
 app/mirror_bot.py
 .dvcignore
 config
+.DS_store
+/localdvc
+/local:
