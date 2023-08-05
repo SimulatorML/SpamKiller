@@ -18,4 +18,3 @@ app/mirror_bot.py
 .dvcignore
 /config
 .DS_store
-/local:
