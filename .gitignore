@@ -10,7 +10,6 @@ src/__pycache__
 bert_spam_classifier.py
 spam_aug.py
 .vscode/
-.dvc/
 /src/metrics/__pycache__
 __pycache__
 admin_ids.txt
@@ -19,5 +18,4 @@ app/mirror_bot.py
 .dvcignore
 config
 .DS_store
-/localdvc
 /local:
