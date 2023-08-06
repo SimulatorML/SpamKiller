@@ -1,4 +1,4 @@
 [core]
     remote = my_local_storage
 ['remote "my_local_storage"']
-    url = local:///localdvc
+    url = local///localdvc
