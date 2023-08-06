@@ -12,6 +12,14 @@ In general, the goal of this project is to reduce the amount of spam to a minimu
 # How does the bot work?
 This version of the bot uses a primitive model based on heuristic rules. This is justified in order to start with a simple one and complicate the model step by step and understand whether it is worth spending human resources on developing a more complex model when a simpler model can cope with the task.
 
+# Get Started
+## Dependencies
+* [DVC](https://dvc.org/doc/install)\
+Install the required Python libraries and download the data:
+```
+pip install -r requirements.txt
+dvc pull
+```
 
 # Project structure
 The following structure is used in this project:
