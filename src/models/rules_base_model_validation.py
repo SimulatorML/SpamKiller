@@ -171,7 +171,7 @@ class RuleBasedClassifier:
         score = 0.0
         feature = ''
         for words in self.stop_words:
-            if fuzz.token_set_ratio(words, message["text"].lower()) >= 80:
+            if fuzz.token_set_ratio(words, message["text"].lower()) >= 70:
                 score += 0.30
                 feature += f'[+0.3] - В сообщении содержится: "{words}"\n'
         return score, feature
@@ -189,7 +189,7 @@ class RuleBasedClassifier:
         score = 0.0
         feature = ''
         for words in self.dangerous_words:
-            if fuzz.token_set_ratio(words, message["text"].lower()) >= 80:
+            if fuzz.token_set_ratio(words, message["text"].lower()) >= 70:
                 score += 0.15
                 feature += f'[+0.15] - В сообщении содержится: "{words}"\n'
         return score, feature
@@ -207,7 +207,7 @@ class RuleBasedClassifier:
         score = 0.0
         feature = ''
         for words in self.spam_words:
-            if fuzz.token_set_ratio(words, message["text"].lower()) >= 80:
+            if fuzz.token_set_ratio(words, message["text"].lower()) >= 70:
                 score += 0.5
                 feature += f'[+0.5] - В сообщении содержится: "{words}"\n'
         return score, feature
@@ -240,8 +240,6 @@ class RuleBasedClassifier:
             float: The spam score of the message. If the `from_id` is in the `not_spam_id` list, the score is decreased by 1.0.
         """
         score = 0.0
-        print(message["from_id"])
-        print(self.not_spam_id)
         feature = ''
         if message["from_id"] in self.not_spam_id:
             score -= 0.5
@@ -260,11 +258,12 @@ class RuleBasedClassifier:
         """
         score = 0.0
         pattern = "[à-üÀ-Üα-ωΑ-ΩҐЄЇІґєїі&&[^ё]]"
+        pattern += "|[Α-Ωα-ω]"
         feature = ''
-        result = re.findall(pattern, message["text"])
+        result = re.findall(pattern, message["text"].lower())
         if result:
-            score += 0.5
-            feature = f'[+0.5] - Греческие/Украинские буквы в сообщении ({", ".join(result[:3])})\n'
+            score += len(result) * 0.1
+            feature = f'[{len(result) * 0.1}] - Греческие/Украинские буквы в сообщении ({", ".join(result[:3])})\n'
         return score, feature
 
     def _check_len_message(self, message):
@@ -322,11 +321,9 @@ class RuleBasedClassifier:
         letters = re.findall(pattern, message["text"])
         feature = ''
         try:
-            if len(capital_letters) / len(letters) > 0.4:
+            if len(capital_letters) / len(letters) > 0.4 and len(message["text"]) > 5:
                 score += 0.15
                 feature = '[+0.15] - Большая концентрация заглавных букв'
         except ZeroDivisionError:
             pass
-
         return score, feature
-
