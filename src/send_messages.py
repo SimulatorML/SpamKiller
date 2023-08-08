@@ -66,7 +66,7 @@ async def handle_msg_with_args(
             features += '\n- Админов нельзя трогать. Они хорошие'
             score = 0
 
-    treshold = 0.25
+    treshold = 0.2
     if score >= treshold:
         label = "<b>&#8252;&#65039; Spam DETECTED</b>"
     else:
