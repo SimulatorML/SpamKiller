@@ -228,7 +228,7 @@ class RuleBasedClassifier:
             float: The calculated score based on the presence of special characters.
         """
         score = 0.0
-        pattern = "[à-üÀ-Üα-ωΑ-ΩҐЄЇІґєїі]"
+        pattern = "[à-üÀ-Üα-ωΑ-ΩҐЄЇІґєїі&&[^ё]]"
         feature = ''
         result = re.findall(pattern, message["text"])
         if result:
