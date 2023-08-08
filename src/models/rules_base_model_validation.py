@@ -171,7 +171,7 @@ class RuleBasedClassifier:
         score = 0.0
         feature = ''
         for words in self.stop_words:
-            if fuzz.token_set_ratio(words, message["text"].lower()) >= 70:
+            if fuzz.token_set_ratio(words, message["text"].lower()) >= 80:
                 score += 0.30
                 feature += f'[+0.3] - В сообщении содержится: "{words}"\n'
         return score, feature
@@ -189,7 +189,7 @@ class RuleBasedClassifier:
         score = 0.0
         feature = ''
         for words in self.dangerous_words:
-            if fuzz.token_set_ratio(words, message["text"].lower()) >= 70:
+            if fuzz.token_set_ratio(words, message["text"].lower()) >= 80:
                 score += 0.15
                 feature += f'[+0.15] - В сообщении содержится: "{words}"\n'
         return score, feature
@@ -207,7 +207,7 @@ class RuleBasedClassifier:
         score = 0.0
         feature = ''
         for words in self.spam_words:
-            if fuzz.token_set_ratio(words, message["text"].lower()) >= 70:
+            if fuzz.token_set_ratio(words, message["text"].lower()) >= 80:
                 score += 0.5
                 feature += f'[+0.5] - В сообщении содержится: "{words}"\n'
         return score, feature
