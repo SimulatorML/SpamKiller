@@ -226,13 +226,13 @@ class RuleBasedClassifier:
             float: The calculated score based on the presence of special characters.
         """
         score = 0.0
-        pattern = "[à-üÀ-Üα-ωΑ-ΩҐЄЇІґєїі&&[^ё]]"
-        pattern += "|[Α-Ωα-ω]"
+        pattern = "[à-üÀ-Üα-ωΑ-ΩҐЄЇІґєїі&&[^ё̰]]"
+        pattern += "|[Α-Ωα-ω̰]"
         feature = ''
         result = re.findall(pattern, message["text"].lower())
         if result:
             score += len(result) * 0.1
-            feature = f'[{len(result) * 0.1}] - Греческие/Украинские буквы в сообщении ({", ".join(result[:3])})\n'
+            feature = f'[{round(len(result) * 0.1,1)}] - Греческие/Украинские буквы в сообщении ({", ".join(result[:3])})\n'
         return score, feature
 
     def _check_len_message(self, message):
