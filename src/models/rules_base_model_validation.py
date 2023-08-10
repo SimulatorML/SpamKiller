@@ -263,7 +263,7 @@ class RuleBasedClassifier:
         result = re.findall(pattern, message["text"].lower())
         if result:
             score += len(result) * 0.1
-            feature = f'[{round(len(result) * 0.1,1)}] - Греческие/Украинские буквы в сообщении ({", ".join(result[:3])})\n'
+            feature = f'[{round(len(result) * 0.1, 1)}] - Греческие/Украинские буквы в сообщении ({", ".join(result[:3])})\n'
         return score, feature
 
     def _check_len_message(self, message):
@@ -278,7 +278,7 @@ class RuleBasedClassifier:
         """
         score = 0.0
         feature = ''
-        if len(message["text"]) < 5:
+        if len(message["text"]) < 5 and len(message['text']) != 0:
             score += 0.1
             feature = '[+0.1] - Сообщение чересчур короткое'
         return score, feature
