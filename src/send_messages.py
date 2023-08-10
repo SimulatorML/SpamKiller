@@ -1,5 +1,6 @@
 from loguru import logger
 from html import escape
+from aiogram import types
 
 
 # Reading only new messages from new users
@@ -43,7 +44,6 @@ async def handle_msg_with_args(
     )
     photo = message.photo[-1].file_id if message.photo else None
     text = message.text or message.caption or ""
-    administrators = await bot.get_chat_administrators(message.chat.id)
     print(message)
     print(message.chat.id)
     print(photo)
@@ -60,9 +60,14 @@ async def handle_msg_with_args(
     print(X)
     score, features = classifier.predict(X)
     logger.info(f"Score: {score}")
-
+    administrators = await bot.get_chat_administrators(message.chat.id)
+    print(message)
     for administrator in administrators:
-        if administrator.user.id == message.from_user.id or message.chat.id in WHITELIST_ADMINS:
+        try:
+            is_channel_admin = message.sender_chat.id in WHITELIST_ADMINS
+        except:
+            is_channel_admin = False
+        if administrator.user.id == message.from_user.id or is_channel_admin:
             features += '\n- Админов нельзя трогать. Они хорошие'
             score = 0
             break
