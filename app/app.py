@@ -37,7 +37,7 @@ TARGET_SPAM_ID = (
     else []
 )  # Get target notid from environment variable (in .env file)
 WHITELIST_ADMINS = (
-    os.getenv("WHITELIST_ADMINS").split(',')
+    [int(i) for i in os.getenv("WHITELIST_ADMINS").split(',')]
     if os.getenv("WHITELIST_ADMINS")
     else []
 )

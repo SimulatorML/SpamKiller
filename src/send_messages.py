@@ -62,9 +62,10 @@ async def handle_msg_with_args(
     logger.info(f"Score: {score}")
 
     for administrator in administrators:
-        if administrator.user.id == message.from_user.id or message.from_user.id in WHITELIST_ADMINS:
+        if administrator.user.id == message.from_user.id or message.chat.id in WHITELIST_ADMINS:
             features += '\n- Админов нельзя трогать. Они хорошие'
             score = 0
+            break
 
     treshold = 0.2
     if score >= treshold:
