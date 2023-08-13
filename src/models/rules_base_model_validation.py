@@ -171,7 +171,7 @@ class RuleBasedClassifier:
         score = 0.0
         feature = ''
         for words in self.stop_words:
-            if fuzz.token_st_ratio(words.lower(), message["text"].lower()) >= 77:
+            if fuzz.token_set_ratio(words.lower(), message["text"].lower()) >= 77:
                 score += 0.30
                 feature += f'[+0.3] - В сообщении содержится: "{words}"\n'
         return score, feature
