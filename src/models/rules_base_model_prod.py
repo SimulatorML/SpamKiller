@@ -88,25 +88,6 @@ class RuleBasedClassifier:
         total_score_normalized = self._normalize_score(total_score, threshold=1)
         return total_score_normalized, name_features
 
-    def _check_contains_link(self, message):
-        score = 0.0
-        feature = ''
-
-        # Regular expression pattern to match URLs
-        url_pattern = r"(?i)\b((?:https?://|www\d{0,3}[.]|telegram[.]me/|t[.]me/|telegra[.]ph/)[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/)))"
-
-        # Search for URLs in the message text
-        urls = re.findall(url_pattern, message["text"])
-        
-        # Check if any found urls are internal Telegram links
-        internal_links = [url for url in urls if 't.me' in url[0] or 'telegra.ph/' in url[0]]
-        
-        if internal_links:
-            score += 0.15
-            feature = "[+0.15] - В сообщении содержится telegram ссылка\n"
-
-        return score, feature
-
     def _normalize_score(self, score, threshold):
         """
         Normalize the score to a range from 0 to 1 using a threshold value.
@@ -126,6 +107,26 @@ class RuleBasedClassifier:
             normalized_score = score / threshold
         return normalized_score
 
+    def _check_contains_link(self, message):
+        score = 0.0
+        feature = ''
+
+        # Regular expression pattern to match URLs
+        url_pattern = r"(?i)\b((?:https?://|www\d{0,3}[.]|telegram[.]me/|t[.]me/|telegra[.]ph/)[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/)))"
+
+        # Search for URLs in the message text
+        urls = re.findall(url_pattern, message["text"])
+        
+        # Check if any found urls are internal Telegram links
+        internal_links = [url for url in urls if 't.me' in url[0] or 'telegra.ph/' in url[0]]
+        
+        if internal_links:
+            score += 0.15
+            feature = "[+0.15] - В сообщении содержится telegram ссылка\n"
+
+        return score, feature
+
+
     def _check_contains_stop_word(self, message):
         """
         Checks if the message contains any stop words and calculates a score based on the number of stop words found.
@@ -140,7 +141,7 @@ class RuleBasedClassifier:
         score = 0.0
         feature = ''
         for words in self.stop_words:
-            if fuzz.token_set_ratio(words, message["text"].lower()) >= 80:
+            if fuzz.token_st_ratio(words.lower(), message["text"].lower()) >= 77:
                 score += 0.30
                 feature += f'[+0.3] - В сообщении содержится: "{words}"\n'
         return score, feature
@@ -158,7 +159,7 @@ class RuleBasedClassifier:
         score = 0.0
         feature = ''
         for words in self.dangerous_words:
-            if fuzz.token_set_ratio(words, message["text"].lower()) >= 80:
+            if fuzz.token_set_ratio(words.lower(), message["text"].lower()) >= 77:
                 score += 0.15
                 feature += f'[+0.15] - В сообщении содержится: "{words}"\n'
         return score, feature
@@ -176,7 +177,7 @@ class RuleBasedClassifier:
         score = 0.0
         feature = ''
         for words in self.spam_words:
-            if fuzz.token_set_ratio(words, message["text"].lower()) >= 80:
+            if fuzz.token_set_ratio(words.lower(), message["text"].lower()) >= 77:
                 score += 0.5
                 feature += f'[+0.5] - В сообщении содержится: "{words}"\n'
         return score, feature
@@ -232,7 +233,7 @@ class RuleBasedClassifier:
         result = re.findall(pattern, message["text"].lower())
         if result:
             score += len(result) * 0.1
-            feature = f'[{round(len(result) * 0.1, 1)}] - Греческие/Украинские буквы в сообщении ({", ".join(result[:3])})\n'
+            feature = f'[+{round(len(result) * 0.1, 1)}] - Греческие/Украинские буквы в сообщении ({", ".join(result[:3])})\n'
         return score, feature
 
     def _check_len_message(self, message):

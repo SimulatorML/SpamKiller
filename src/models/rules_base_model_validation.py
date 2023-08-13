@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from loguru import logger
 import pandas as pd
 from fuzzywuzzy import fuzz
-
+from tqdm import tqdm
 
 logger.info("Init rules_base_model")
 
@@ -92,7 +92,7 @@ class RuleBasedClassifier:
         logger.info("Predicting...")
         pred_scores = []
         name_features = ''
-        for index in range(len(X)):
+        for index in tqdm(range(len(X))):
             message = X.iloc[index, :]
             score, temp_name_features = self._predict_message(message)
             name_features += temp_name_features
@@ -171,7 +171,7 @@ class RuleBasedClassifier:
         score = 0.0
         feature = ''
         for words in self.stop_words:
-            if fuzz.token_set_ratio(words, message["text"].lower()) >= 80:
+            if fuzz.token_st_ratio(words.lower(), message["text"].lower()) >= 77:
                 score += 0.30
                 feature += f'[+0.3] - В сообщении содержится: "{words}"\n'
         return score, feature
@@ -189,7 +189,7 @@ class RuleBasedClassifier:
         score = 0.0
         feature = ''
         for words in self.dangerous_words:
-            if fuzz.token_set_ratio(words, message["text"].lower()) >= 80:
+            if fuzz.token_set_ratio(words.lower(), message["text"].lower()) >= 77:
                 score += 0.15
                 feature += f'[+0.15] - В сообщении содержится: "{words}"\n'
         return score, feature
@@ -207,7 +207,7 @@ class RuleBasedClassifier:
         score = 0.0
         feature = ''
         for words in self.spam_words:
-            if fuzz.token_set_ratio(words, message["text"].lower()) >= 80:
+            if fuzz.token_set_ratio(words.lower(), message["text"].lower()) >= 77:
                 score += 0.5
                 feature += f'[+0.5] - В сообщении содержится: "{words}"\n'
         return score, feature
@@ -263,7 +263,7 @@ class RuleBasedClassifier:
         result = re.findall(pattern, message["text"].lower())
         if result:
             score += len(result) * 0.1
-            feature = f'[{round(len(result) * 0.1, 1)}] - Греческие/Украинские буквы в сообщении ({", ".join(result[:3])})\n'
+            feature = f'[+{round(len(result) * 0.1, 1)}] - Греческие/Украинские буквы в сообщении ({", ".join(result[:3])})\n'
         return score, feature
 
     def _check_len_message(self, message):
