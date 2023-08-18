@@ -267,7 +267,7 @@ class RuleBasedClassifier:
         for word_fuzzy_not_enough in self.words_fuzzy_not_enough:
             for word in message["text"].split():
                 if word_fuzzy_not_enough == re.sub(r"[^a-zа-я]", "", word.lower()):
-                    score += 0.3
+                    score += 0.15
         return score, feature
 
     def _check_capital_letters(self, message):
