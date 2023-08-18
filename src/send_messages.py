@@ -44,6 +44,10 @@ async def handle_msg_with_args(
     )
     photo = message.photo[-1].file_id if message.photo else None
     text = message.text or message.caption or ""
+    try:
+        text += f' [{message.entities[0].url}]'
+    except:
+        pass
     print(message)
     print(message.chat.id)
     print(photo)

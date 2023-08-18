@@ -112,11 +112,10 @@ class RuleBasedClassifier:
         feature = ''
 
         # Regular expression pattern to match URLs
-        url_pattern = r"(?i)\b((?:https?://|www\d{0,3}[.]|telegram[.]me/|t[.]me/|telegra[.]ph/)[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/)))"
+        url_pattern = r"(?i)\b((?:http?://|www\d{0,3}[.]|telegram[.]me/|t[.]me/|telegra[.]ph/)[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/)))"
 
         # Search for URLs in the message text
         urls = re.findall(url_pattern, message["text"])
-        
         # Check if any found urls are internal Telegram links
         internal_links = [url for url in urls if 't.me' in url[0] or 'telegra.ph/' in url[0]]
         
