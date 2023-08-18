@@ -112,7 +112,7 @@ class RuleBasedClassifier:
         feature = ''
 
         # Regular expression pattern to match URLs
-        url_pattern = r"(?i)\b((?:http?://|www\d{0,3}[.]|telegram[.]me/|t[.]me/|telegra[.]ph/)[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/)))"
+        url_pattern = r"(?i)\b((?:http[s]?://|www\d{0,3}[.]|telegram[.]me/|t[.]me/|telegra[.]ph/)[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/)))"
 
         # Search for URLs in the message text
         urls = re.findall(url_pattern, message["text"])
