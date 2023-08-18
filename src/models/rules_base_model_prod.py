@@ -119,7 +119,7 @@ class RuleBasedClassifier:
         # Check if any found urls are internal Telegram links
         internal_links = [url for url in urls if 't.me' in url[0] or 'telegra.ph/' in url[0]]
         
-        if internal_links:
+        if internal_links or 'none' in message["text"].lower():
             score += 0.15
             feature = "[+0.15] - В сообщении содержится telegram ссылка\n"
 
