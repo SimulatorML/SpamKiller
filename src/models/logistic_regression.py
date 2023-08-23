@@ -5,10 +5,12 @@ from loguru import logger
 
 
 logger.info("Init LogisticRegression")
-
 class SpamLogisticRegression:
     def __init__(self):
-        self.model = LogisticRegression(class_weight='balanced',solver='lbfgs', max_iter=10_000, n_jobs=-1)
+        class_weights = {0 : 1, 1 : 837}
+        self.model = LogisticRegression(penalty='l1',
+                                        class_weight=class_weights,
+                                          solver='liblinear', n_jobs=-1)
     
     def fit(self, X, y):
         self.model.fit(X, y)
