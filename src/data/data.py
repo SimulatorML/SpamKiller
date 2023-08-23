@@ -158,6 +158,66 @@ class FeatureEngineering:
                 "name": "contains_сapital_letters",
                 "check": self._check_capital_letters,
             },
+            {
+                "name": "contains_special_characters",
+                "check": self._check_special_characters,
+            },
+            {
+                "name": "contains_words_fuzzy_not_enough",
+                "check": self._check_words_fuzzy_not_enough,
+            },
+            {
+                "name": "num_emojis",
+                "check": self._check_num_emojis,
+            },
+            {
+                "name": "has_tg_link",
+                "check": self._check_has_tg_link,
+            },
+            {
+                "name": "num_unique_symbols",
+                "check": self._check_num_unique_symbols,
+            },
+            {
+                "name": "num_special_characters",
+                "check": self._check_num_special_characters,
+            },
+            {
+                "name": "num_capitalized_words",
+                "check": self._check_num_capitalized_words,
+            },
+            {
+                "name": "num_exclamation_marks",
+                "check": self._check_num_exclamation_marks,
+            },
+            {
+                "name": "num_question_marks",
+                "check": self._check_num_question_marks,
+            },
+            {
+                "name": "num_uppercase_letters",
+                "check": self._check_num_uppercase_letters,
+            },
+            {
+                "name": "num_non_ascii_characters",
+                "check": self._check_num_non_ascii_characters,
+            },
+            {
+                "name": "num_all_caps_words",
+                "check": self._check_num_all_caps_words,
+            },
+            {
+                "name": "num_unique_words",
+                "check": self._check_num_unique_words,
+            },
+            {
+                "name": "average_sentence_length",
+                "check": self._check_average_sentence_length,
+            },
+            {
+                "name": "num_emoticons",
+                "check": self._check_num_emoticons,
+            },
         ]
         self.photo_features = [
             {"name": "contains_photo", "check": self._check_contains_photo}
@@ -268,3 +328,121 @@ class FeatureEngineering:
                 pass
             return 0
         return df.apply(regular_process)
+
+    
+    def _check_num_emojis(self, df: pd.Series):
+      def count_emojis(text):
+        if isinstance(text, str):
+            emoji_pattern = re.compile("["
+                                      u"\U0001F600-\U0001F64F"  # emoticons
+                                      u"\U0001F300-\U0001F5FF"  # symbols & pictographs
+                                      u"\U0001F680-\U0001F6FF"  # transport & map symbols
+                                      u"\U0001F700-\U0001F77F"  # alchemical symbols
+                                      u"\U0001F780-\U0001F7FF"  # Geometric Shapes Extended
+                                      u"\U0001F800-\U0001F8FF"  # Supplemental Arrows-C
+                                      u"\U0001F900-\U0001F9FF"  # Supplemental Symbols and Pictographs
+                                      u"\U0001FA00-\U0001FA6F"  # Chess Symbols
+                                      u"\U0001FA70-\U0001FAFF"  # Symbols and Pictographs Extended-A
+                                      u"\U00002702-\U000027B0"  # Dingbats
+                                      u"\U000024C2-\U0001F251"
+                                      "]+", flags=re.UNICODE)
+            emojis = emoji_pattern.findall(text)
+            return len(emojis)
+        else:
+            return 0
+      return df.apply(count_emojis)
+
+
+    def _check_has_tg_link(self, df : pd.Series):
+      def has_tg_link(text):
+        link_pattern = re.compile(r't\.me/[a-zA-Z0-9\-_]+')
+        return int(bool(link_pattern.search(text)))
+      return df.apply(has_tg_link)
+
+
+    def _check_num_unique_symbols(self, df : pd.Series):
+      def count_unique_symbols(text):
+        unique_symbols = set(text)
+        return len(unique_symbols)
+      return df.apply(count_unique_symbols)
+
+
+    def _check_num_special_characters(self, df : pd.Series):
+      def count_special_characters(text):
+        special_chars = re.findall(r'[^\w\s]', text, re.UNICODE)
+        return len(special_chars)
+      return df.apply(count_special_characters)
+
+    def _check_num_capitalized_words(self, df : pd.Series):
+      def count_capitalized_words(text):
+        words = text.split()
+        capitalized_words = [word for word in words if word[0].isupper()]
+        return len(capitalized_words)
+      return df.apply(count_capitalized_words)
+
+
+    def _check_num_exclamation_marks(self, df : pd.Series):
+      def count_exclamation_marks(text):
+        return text.count('!')
+      return df.apply(count_exclamation_marks)
+
+
+    def _check_num_question_marks(self, df : pd.Series):
+      def count_question_marks(text):
+        return text.count('?')
+      return df.apply(count_question_marks)
+
+    def _check_num_uppercase_letters(self, df : pd.Series):
+      def count_uppercase_letters(text):
+        return sum(1 for char in text if char.isupper())
+      return df.apply(count_uppercase_letters)
+    
+    def _check_num_non_ascii_characters(self, df : pd.Series):
+      def count_non_ascii_characters(text):
+         return sum(1 for char in text if ord(char) > 127 and not 1024 <= ord(char) <= 1279)
+      return df.apply(count_non_ascii_characters)
+
+
+    def _check_num_all_caps_words(self, df : pd.Series):
+      def count_all_caps_words(text):
+        words = text.split()
+        all_caps_words = [word for word in words if word.isupper()]
+        return len(all_caps_words)
+      return df.apply(count_all_caps_words)
+
+
+    def _check_num_unique_words(self, df : pd.Series):
+      def count_unique_words(text):
+        cleaned_text = re.sub(r'\W+', ' ', text.lower())  # Remove non-alphanumeric characters
+        words = cleaned_text.split()
+        unique_words = set(words)
+        return len(unique_words)
+      return df.apply(count_unique_words)
+
+
+    def _check_average_sentence_length(self, df : pd.Series):
+      def average_sentence_length(text):
+        # Use regular expression to split text into sentences
+        sentences = re.split(r'[.!?]', text)
+        sentences = [sentence.strip() for sentence in sentences if sentence.strip()]  # Remove empty sentences
+
+        total_words = 0
+        for sentence in sentences:
+            total_words += len(sentence.split())
+
+        # Calculate average sentence length
+        if len(sentences) > 0:
+            average_length = total_words / len(sentences)
+        else:
+            average_length = 0
+
+        return average_length
+      return df.apply(average_sentence_length)
+
+
+    def _check_num_emoticons(self, df : pd.Series):
+      def count_emoticons(text):
+        emoticon_pattern = re.compile(r'(?::|;|=)(?:-)?(?:\)|\(|D|P)')
+        emoticons = emoticon_pattern.findall(text)
+        return len(emoticons)
+      return df.apply(count_emoticons)
