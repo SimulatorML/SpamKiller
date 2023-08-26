@@ -8,6 +8,8 @@ from dataclasses import dataclass
 from loguru import logger
 from fuzzywuzzy import fuzz
 from tqdm import tqdm
+from sklearn.feature_extraction.text import TfidfVectorizer
+import gc
 
 class Data:
     @staticmethod
@@ -137,6 +139,9 @@ class FeatureEngineering:
         )["words_fuzzy_not_enough"].tolist()
         self.not_spam_id = []
 
+        self.vectorizer = TfidfVectorizer(max_df=0.85, min_df=2, stop_words=self.stop_words, max_features=10_000)
+        self.vectorizer.fit(df['text'])
+
         self.text_features = [
             {"name": "contains_link", "check": self._check_contains_link},
             {"name": "contains_stop_word", "check": self._check_contains_stop_word},
@@ -234,6 +239,10 @@ class FeatureEngineering:
             df[feature['name']] = feature['check'](df['photo'])
         for feature in tqdm(self.id_features):
             df[feature['name']] = feature['check'](df['from_id'])
+        tfidf_features = self.get_tfidf_features(df['text'])
+        assert df.index.equals(tfidf_features.index), "Indexes do not match!"
+        df = pd.concat([df, tfidf_features], axis=1)
+        gc.collect()
         return df
 
     def _check_contains_link(self, df: pd.Series) -> pd.Series:
@@ -249,7 +258,7 @@ class FeatureEngineering:
             internal_links = [url for url in urls if 't.me' in url[0] or 'telegra.ph/' in url[0]]
             
             if internal_links or 'none' in message_text.lower().split()[-1]:
-                count_links += 0.15
+                count_links += 1
             return count_links
 
         return df.apply(regular_process)
@@ -260,7 +269,7 @@ class FeatureEngineering:
             count_stop_words = 0
             for words in self.stop_words:
                 if fuzz.token_set_ratio(words.lower(), message_text.lower()) >= 77:
-                    count_stop_words += 0.3
+                    count_stop_words += 1
             return count_stop_words
 
         return df.apply(regular_process)
@@ -270,7 +279,7 @@ class FeatureEngineering:
             count_dangerous_words = 0
             for words in self.dangerous_words:
                 if fuzz.token_set_ratio(words.lower(), message_text.lower()) >= 77:
-                    count_dangerous_words += 0.15
+                    count_dangerous_words += 1
             return count_dangerous_words
 
         return df.apply(regular_process)
@@ -280,15 +289,15 @@ class FeatureEngineering:
             count_spam_words = 0
             for words in self.spam_words:
                 if fuzz.token_set_ratio(words.lower(), message_text.lower()) >= 77:
-                    count_spam_words += 0.5
+                    count_spam_words += 1
             return count_spam_words
         return df.apply(regular_process)
 
     def _check_contains_photo(self, df: pd.Series):
-        return df.apply(lambda photo: 0.15 if photo else 0)
+        return df.apply(lambda photo: 1 if photo else 0)
 
     def _check_not_spam_id(self, df: pd.Series):
-        return df.apply(lambda from_id: -0.5 if from_id in self.not_spam_id else 0)
+        return df.apply(lambda from_id: -1 if from_id in self.not_spam_id else 0)
 
     def _check_special_characters(self, df: pd.Series):
         def regular_process(message_text: str):
@@ -297,7 +306,7 @@ class FeatureEngineering:
             pattern += "|[Α-Ωα-ω̰]"
             result = re.findall(pattern, message_text.lower())
             if result:
-                count_special_characters = len(result) * 0.1
+                count_special_characters = len(result)
             return count_special_characters
         return df.apply(regular_process)
 
@@ -310,7 +319,7 @@ class FeatureEngineering:
             for word_fuzzy_not_enough in self.words_fuzzy_not_enough:
                 for word in message_text.split():
                     if word_fuzzy_not_enough == re.sub(r"[^a-zа-я]", "", word.lower()):
-                        count_words_fuzzy += 0.15
+                        count_words_fuzzy += 1
             return count_words_fuzzy
         
         return df.apply(regular_process)
@@ -318,17 +327,9 @@ class FeatureEngineering:
     def _check_capital_letters(self, df: pd.Series):
         def regular_process(message_text: str):
             capital_pattern = "[A-ZА-Я]"
-            pattern = "[a-zA-Zа-яА-Я]"
-
             capital_letters = re.findall(capital_pattern, message_text)
-            letters = re.findall(pattern, message_text)
-            try:
-                return 0.15 if len(capital_letters) / len(letters) > 0.4 and len(message_text) > 5 else 0
-            except ZeroDivisionError:
-                pass
-            return 0
+            return len(capital_letters)
         return df.apply(regular_process)
-
     
     def _check_num_emojis(self, df: pd.Series):
       def count_emojis(text):
@@ -359,13 +360,11 @@ class FeatureEngineering:
         return int(bool(link_pattern.search(text)))
       return df.apply(has_tg_link)
 
-
     def _check_num_unique_symbols(self, df : pd.Series):
       def count_unique_symbols(text):
         unique_symbols = set(text)
         return len(unique_symbols)
       return df.apply(count_unique_symbols)
-
 
     def _check_num_special_characters(self, df : pd.Series):
       def count_special_characters(text):
@@ -380,12 +379,10 @@ class FeatureEngineering:
         return len(capitalized_words)
       return df.apply(count_capitalized_words)
 
-
     def _check_num_exclamation_marks(self, df : pd.Series):
       def count_exclamation_marks(text):
         return text.count('!')
       return df.apply(count_exclamation_marks)
-
 
     def _check_num_question_marks(self, df : pd.Series):
       def count_question_marks(text):
@@ -402,14 +399,12 @@ class FeatureEngineering:
          return sum(1 for char in text if ord(char) > 127 and not 1024 <= ord(char) <= 1279)
       return df.apply(count_non_ascii_characters)
 
-
     def _check_num_all_caps_words(self, df : pd.Series):
       def count_all_caps_words(text):
         words = text.split()
         all_caps_words = [word for word in words if word.isupper()]
         return len(all_caps_words)
       return df.apply(count_all_caps_words)
-
 
     def _check_num_unique_words(self, df : pd.Series):
       def count_unique_words(text):
@@ -418,7 +413,6 @@ class FeatureEngineering:
         unique_words = set(words)
         return len(unique_words)
       return df.apply(count_unique_words)
-
 
     def _check_average_sentence_length(self, df : pd.Series):
       def average_sentence_length(text):
@@ -439,10 +433,13 @@ class FeatureEngineering:
         return average_length
       return df.apply(average_sentence_length)
 
-
     def _check_num_emoticons(self, df : pd.Series):
       def count_emoticons(text):
         emoticon_pattern = re.compile(r'(?::|;|=)(?:-)?(?:\)|\(|D|P)')
         emoticons = emoticon_pattern.findall(text)
         return len(emoticons)
       return df.apply(count_emoticons)
+    
+    def get_tfidf_features(self, df: pd.Series):
+        tfidf_matrix = self.vectorizer.transform(df)
+        return pd.DataFrame(tfidf_matrix.toarray(), columns=self.vectorizer.get_feature_names_out(), index=df.index)
