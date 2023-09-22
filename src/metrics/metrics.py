@@ -15,7 +15,7 @@ class Metrics(ABC):
     """Metrics"""
 
     min_value: float = 0.99
-    conf: float = 0.95
+    conf: float = 0.99
     n_bootstraps: int = 10000
     verbose: bool = False
 

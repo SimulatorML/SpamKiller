@@ -78,11 +78,7 @@ class Data:
             dataframe["text"].str.replace("\s+", " ", regex=True).str.strip()
         )
         dataframe = dataframe.drop_duplicates(subset="text")
-        dataframe = (
-            dataframe[dataframe["text"].str.len() > 0]
-            .dropna()
-            .drop_duplicates(subset="text")
-        )
+        dataframe = dataframe[dataframe["text"].str.len() > 0]
         # fe = FeatureEngineering(dataframe)
         #   dataframe = fe.feature_extract().drop(columns=['text', 'from_id', 'photo', 'reply_to_message_id'])
         dataframe.to_csv(save_dir, index=False, sep=";")
@@ -105,9 +101,7 @@ class Data:
 
         for path in files_dir:
             df = pd.read_csv(path, sep=";")
-            train_df, test_df = train_test_split(
-                df, test_size=0.2, shuffle=True, stratify=df["label"]
-            )
+            train_df, test_df = train_test_split(df, test_size=0.2, shuffle=False)
 
             train_df.reset_index(drop=True, inplace=True)
             test_df.reset_index(drop=True, inplace=True)
@@ -117,6 +111,9 @@ class Data:
 
         train = pd.concat(train, ignore_index=True, axis=0)
         test = pd.concat(test, ignore_index=True, axis=0)
+
+        train = train.dropna().drop_duplicates(subset="text")
+        test = test.dropna().drop_duplicates(subset="text")
 
         train.to_csv(train_dir, sep=";", index=False)
         test.to_csv(test_dir, sep=";", index=False)

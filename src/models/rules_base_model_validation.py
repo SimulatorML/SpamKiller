@@ -18,7 +18,7 @@ class RuleBasedClassifier:
 
         """
 
-        with open("config.yml", "r") as f:
+        with open("./config.yml", "r") as f:
             config = yaml.safe_load(f)
             self.path_stop_words = config["stop_words"]
             self.path_dangerous_words = config["dangerous_words"]
@@ -62,6 +62,7 @@ class RuleBasedClassifier:
                 "name": "contains_сapital_letters",
                 "check": self._check_capital_letters,
             },
+            {"name": "contains_emoji", "check": self._contains_emoji},
         ]
 
     def fit(self, X, y):
@@ -140,19 +141,23 @@ class RuleBasedClassifier:
     def _check_contains_link(self, message):
         score = 0.0
         feature = ""
+        link_pattern = re.compile(
+            r"https?://[^\s]+|"  # обычные http и https ссылки
+            r"@[\w\d_]+|"  # @username формат
+            r"t\.me/\S+|"  # t.me ссылки
+            r"t\.me/joinchat/\S+|"  # t.me ссылки на группы
+            r"telegra\.ph/\S+"  # telegraph ссылки
+        )
+        text = message["text"]
+        links = link_pattern.findall(text)
 
-        # Regular expression pattern to match URLs
-        url_pattern = r"(?i)\b((?:http[s]?://|www\d{0,3}[.]|telegram[.]me/|t[.]me/|telegra[.]ph/)[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/)))"
+        if not links:
+            return score, feature
 
-        # Search for URLs in the message text
-        urls = re.findall(url_pattern, message["text"])
-
-        # Check if any found urls are internal Telegram links
-        internal_links = [
-            url for url in urls if "t.me" in url[0] or "telegra.ph/" in url[0]
-        ]
-
-        if internal_links or "none" in message["text"].lower().split()[-1]:
+        if text.strip() == links[0] or len(links) >= 2:
+            score += 0.3
+            feature = "[+0.3] - В сообщении содержится только telegram ссылка\n"
+        else:
             score += 0.15
             feature = "[+0.15] - В сообщении содержится telegram ссылка\n"
 
@@ -258,13 +263,12 @@ class RuleBasedClassifier:
             float: The calculated score based on the presence of special characters.
         """
         score = 0.0
-        pattern = "[à-üÀ-Üα-ωΑ-ΩҐЄЇІґєїі&&[^ё̰]]"
-        pattern += "|[Α-Ωα-ω̰]"
+        pattern = "[^a-zA-Zа-яА-ЯёЁ0-9.,!?;:()[]{}+=*/%<>^&|\\-–—'\"#$_~ \t\n\r∞≈≤≥±∓√∛∜∫∑∏∂∇×÷⇒⇐⇔\\{}[]()^_&∧∨¬⊕⊖⊗⊘∈∉∪∩⊆⊇⊂⊃ℕℤℚℝℂ→↦]"
         feature = ""
         result = re.findall(pattern, message["text"].lower())
         if result:
             score += len(result) * 0.1
-            feature = f'[+{round(len(result) * 0.1, 1)}] - Греческие/Украинские буквы в сообщении ({", ".join(result[:3])})\n'
+            feature = f'[+{round(len(result) * 0.1, 1)}] - Неразрешенные символы ({", ".join(result[:3])})\n'
         return score, feature
 
     def _check_len_message(self, message):
@@ -327,4 +331,31 @@ class RuleBasedClassifier:
                 feature = "[+0.15] - Большая концентрация заглавных букв"
         except ZeroDivisionError:
             pass
+        return score, feature
+
+    def _contains_emoji(self, message):
+        score = 0.0
+        feature = ""
+        # Unicode кодовые точки для эмодзи
+        emojis = [
+            "\U00002757",
+            "\U00002753",
+            "\U0001F4A6",
+            "\U0001F4B5",
+            "\U0001F4A7",
+            "\U0001F346",
+            "\U0001F34C",
+            "\U0001F351",
+            "\U0001F353",
+            "\U0001F352",
+            "\U0001F608",
+        ]
+        emoji_pattern = re.compile("|".join(emojis))
+
+        found_emojis = emoji_pattern.findall(message["text"])
+
+        if found_emojis:
+            score += 0.15 * len(found_emojis)
+            feature += f"[+{round(score,1)}] - Содержатся подозрительные эмодзи"
+
         return score, feature
