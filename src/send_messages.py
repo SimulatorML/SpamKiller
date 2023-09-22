@@ -50,7 +50,7 @@ async def handle_msg_with_args(
     try:
         chat_member = await bot.get_chat_member(chat_id, user_id)
         user_description = (
-            chat_member.user.bio if hasattr(chat_member.user, "bio") else "Нет описания"
+            chat_member.user.bio if chat_member.user.bio else "Нет описания"
         )
     except Exception as e:
         user_description = ""
