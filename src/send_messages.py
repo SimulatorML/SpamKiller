@@ -124,7 +124,7 @@ async def handle_msg_with_args(
             + '\n"""\n'
             + f"{escape(text)}\n"
             + '"""\n\n'
-            + "Описание аккаунта:"
+            + "Описание аккаунта:\n"
             + "-" * 10
             + "\n"
             + f"{escape(user_description)}\n"
