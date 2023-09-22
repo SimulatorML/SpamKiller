@@ -46,14 +46,8 @@ async def handle_msg_with_args(
     text = message.text or message.caption or ""
     chat_id = message.chat.id
     user_id = message.from_user.id
-    chat_member = await bot.get_chat_member(chat_id, user_id)
-    try:
-        chat_member = await bot.get_chat_member(chat_id, user_id)
-        user_description = (
-            chat_member.user.bio if chat_member.user.bio else "Нет описания"
-        )
-    except Exception as e:
-        user_description = ""
+    user_info = await bot.get_chat(message.from_user.id)
+    user_description = user_info.bio
     try:
         text += f" [{message.entities[0].url}]"
     except:
