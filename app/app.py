@@ -27,24 +27,18 @@ ADMIN_IDS = (
     os.getenv("ADMIN_IDS").split(",") if os.getenv("ADMIN_IDS") else []
 )  # Get admin id from environment variable (in .env file)
 TARGET_GROUP_ID = (
-    os.getenv("TARGET_GROUP_ID")
-    if os.getenv("TARGET_GROUP_ID")
-    else []
+    os.getenv("TARGET_GROUP_ID") if os.getenv("TARGET_GROUP_ID") else []
 )  # Get tar  # Get target group id from environment variable (in .env file)
 TARGET_SPAM_ID = (
-    os.getenv("TARGET_SPAM_ID")
-    if os.getenv("TARGET_SPAM_ID")
-    else []
+    os.getenv("TARGET_SPAM_ID") if os.getenv("TARGET_SPAM_ID") else []
 )  # Get target notid from environment variable (in .env file)
 WHITELIST_ADMINS = (
-    [int(i) for i in os.getenv("WHITELIST_ADMINS").split(',')]
+    [int(i) for i in os.getenv("WHITELIST_ADMINS").split(",")]
     if os.getenv("WHITELIST_ADMINS")
     else []
 )
 TARGET_NOT_SPAM_ID = (
-    os.getenv("TARGET_NOT_SPAM_ID")
-    if os.getenv("TARGET_NOT_SPAM_ID")
-    else []
+    os.getenv("TARGET_NOT_SPAM_ID") if os.getenv("TARGET_NOT_SPAM_ID") else []
 )  # Get target not spam group id from environment variable (in .env file)
 AUTHORIZED_USER_IDS = (
     os.getenv("AUTHORIZED_USER_IDS").split(",")
@@ -115,7 +109,7 @@ def handle_msg_partial():
         AUTHORIZED_GROUP_IDS=AUTHORIZED_GROUP_IDS,
         TARGET_SPAM_ID=TARGET_SPAM_ID,
         TARGET_NOT_SPAM_ID=TARGET_NOT_SPAM_ID,
-        WHITELIST_ADMINS=WHITELIST_ADMINS
+        WHITELIST_ADMINS=WHITELIST_ADMINS,
     )  # Creating a wrapper for handle_msg, passing all the necessary arguments
 
 

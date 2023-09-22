@@ -37,22 +37,32 @@ async def handle_msg_with_args(
     #     str(message.chat.id) in AUTHORIZED_GROUP_IDS
     #     or str(message.from_id) in AUTHORIZED_USER_IDS
     # ):
-    logger.info(f"Message got from new user. Checking for spam")
+    logger.info("Message got from new user. Checking for spam")
 
     reply_to_message_id = (
         message.reply_to_message.message_id if message.reply_to_message else None
     )
     photo = message.photo[-1].file_id if message.photo else None
     text = message.text or message.caption or ""
+    chat_id = message.chat.id
+    user_id = message.from_user.id
+    chat_member = await bot.get_chat_member(chat_id, user_id)
     try:
-        text += f' [{message.entities[0].url}]'
+        chat_member = await bot.get_chat_member(chat_id, user_id)
+        user_description = (
+            chat_member.user.bio if hasattr(chat_member.user, "bio") else "Нет описания"
+        )
+    except Exception as e:
+        user_description = ""
+    try:
+        text += f" [{message.entities[0].url}]"
     except:
         pass
     print(message)
     print(message.chat.id)
     print(photo)
     print(reply_to_message_id)
-    print([text])
+    print([text + user_description])
     print(message.from_id)
 
     X = {
@@ -72,7 +82,7 @@ async def handle_msg_with_args(
         except:
             is_channel_admin = False
         if administrator.user.id == message.from_user.id or is_channel_admin:
-            features += '\n- Админов нельзя трогать. Они хорошие'
+            features += "\n- Админов нельзя трогать. Они хорошие"
             score = 0
             break
 
@@ -82,10 +92,10 @@ async def handle_msg_with_args(
     else:
         label = "<i>No spam detected</i>"
     if len(text) > 600:
-        text = text[:600] + '...'
+        text = text[:600] + "..."
     logger.info("The message was sent to the administrator and the group")
-    if len(features.split('-')) > 2:
-            spam_message_for_admins = (
+    if len(features.split("-")) > 2:
+        spam_message_for_admins = (
             f"{(label)} <b>({round(score * 100, 2)}%)</b>\n"
             + "\n"
             + f"Канал: {(message.chat.title)}\n"
@@ -93,7 +103,13 @@ async def handle_msg_with_args(
             + f"Время: {(message.date)}\n"
             + '\n"""\n'
             + f"{escape(text)}\n"
-            + '"""\n'
+            + '"""\n\n'
+            + "Описание аккаунта:\n"
+            + "-" * 10
+            + "\n"
+            + f"{escape(user_description)}\n"
+            + "-" * 10
+            + "\n"
             + "\n"
             + "Причины:\n"
             + features
@@ -107,7 +123,13 @@ async def handle_msg_with_args(
             + f"Время: {(message.date)}\n"
             + '\n"""\n'
             + f"{escape(text)}\n"
-            + '"""\n'
+            + '"""\n\n'
+            + "Описание аккаунта:"
+            + "-" * 10
+            + "\n"
+            + f"{escape(user_description)}\n"
+            + "-" * 10
+            + "\n"
             + "\n"
             + "Причина:\n"
             + features
@@ -117,7 +139,9 @@ async def handle_msg_with_args(
     # Send the same message to the groupы
     if photo is None:
         if score >= 0.1:
-            await bot.send_message(GROUP_CHAT_ID, spam_message_for_group, parse_mode="HTML")
+            await bot.send_message(
+                GROUP_CHAT_ID, spam_message_for_group, parse_mode="HTML"
+            )
         for admin_id in ADMIN_IDS:
             await bot.send_message(admin_id, spam_message_for_admins, parse_mode="HTML")
 

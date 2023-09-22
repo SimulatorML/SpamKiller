@@ -4,7 +4,8 @@ import fire
 from src.models.rules_base_model_validation import RuleBasedClassifier
 from src.models.logistic_regression import SpamLogisticRegression
 
-def job(Model=SpamLogisticRegression) -> None:
+
+def job(Model=RuleBasedClassifier) -> None:
     """
     Runs a given model on a cleaned dataset of spam and non-spam messages, and saves the predicted scores
     and corresponding labels to a CSV file.
@@ -28,24 +29,16 @@ def job(Model=SpamLogisticRegression) -> None:
 
     model = Model()
     if isinstance(model, SpamLogisticRegression):
-        model.fit(
-            train.drop(columns='label'), train["label"]
-        )
-        pred_scores = model.predict(
-            test.drop(columns='label')
-        )
+        model.fit(train.drop(columns="label"), train["label"])
+        pred_scores = model.predict(test.drop(columns="label"))
 
     else:
-        model.fit(
-            train.drop(columns='label'), train["label"]
-        )
-        pred_scores, _ = model.predict(
-            test.drop(columns='label')
-        )
+        model.fit(train.drop(columns="label"), train["label"])
+        pred_scores, _ = model.predict(test.drop(columns="label"))
 
     labels_and_scores = pd.DataFrame(
-                {"pred_scores": pred_scores, "label": test["label"].values}
-            )
+        {"pred_scores": pred_scores, "label": test["label"].values}
+    )
     labels_and_scores.to_csv(f"{data_path}/{save_path}", sep=";", index=False)
 
 

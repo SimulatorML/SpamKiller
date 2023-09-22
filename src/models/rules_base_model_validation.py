@@ -91,7 +91,7 @@ class RuleBasedClassifier:
         """
         logger.info("Predicting...")
         pred_scores = []
-        name_features = ''
+        name_features = ""
         for index in tqdm(range(len(X))):
             message = X.iloc[index, :]
             score, temp_name_features = self._predict_message(message)
@@ -110,14 +110,14 @@ class RuleBasedClassifier:
             float: The total score of the message based on the rules.
         """
         total_score = 0.0
-        name_features = ''
+        name_features = ""
         for rule in self.rules:
             temp_score, temp_name_features = rule["check"](message)
             total_score += temp_score
             name_features += temp_name_features
         total_score_normalized = self._normalize_score(total_score, threshold=1)
         return total_score_normalized, name_features
-    
+
     def _normalize_score(self, score, threshold):
         """
         Normalize the score to a range from 0 to 1 using a threshold value.
@@ -139,23 +139,24 @@ class RuleBasedClassifier:
 
     def _check_contains_link(self, message):
         score = 0.0
-        feature = ''
+        feature = ""
 
         # Regular expression pattern to match URLs
         url_pattern = r"(?i)\b((?:http[s]?://|www\d{0,3}[.]|telegram[.]me/|t[.]me/|telegra[.]ph/)[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/)))"
 
         # Search for URLs in the message text
         urls = re.findall(url_pattern, message["text"])
-        
+
         # Check if any found urls are internal Telegram links
-        internal_links = [url for url in urls if 't.me' in url[0] or 'telegra.ph/' in url[0]]
-        
-        if internal_links or 'none' in message["text"].lower().split()[-1]:
+        internal_links = [
+            url for url in urls if "t.me" in url[0] or "telegra.ph/" in url[0]
+        ]
+
+        if internal_links or "none" in message["text"].lower().split()[-1]:
             score += 0.15
             feature = "[+0.15] - В сообщении содержится telegram ссылка\n"
 
         return score, feature
-
 
     def _check_contains_stop_word(self, message):
         """
@@ -169,7 +170,7 @@ class RuleBasedClassifier:
         """
 
         score = 0.0
-        feature = ''
+        feature = ""
         for words in self.stop_words:
             if fuzz.token_set_ratio(words.lower(), message["text"].lower()) >= 77:
                 score += 0.30
@@ -187,7 +188,7 @@ class RuleBasedClassifier:
             float: The score calculated based on the number of dangerous words found.
         """
         score = 0.0
-        feature = ''
+        feature = ""
         for words in self.dangerous_words:
             if fuzz.token_set_ratio(words.lower(), message["text"].lower()) >= 77:
                 score += 0.15
@@ -205,7 +206,7 @@ class RuleBasedClassifier:
             float: The score, which is incremented by 1.0 if the phrase is found.
         """
         score = 0.0
-        feature = ''
+        feature = ""
         for words in self.spam_words:
             if fuzz.token_set_ratio(words.lower(), message["text"].lower()) >= 90:
                 score += 0.5
@@ -223,10 +224,10 @@ class RuleBasedClassifier:
             float: The score based on whether the message contains a photo.
         """
         score = 0.0
-        feature = ''
+        feature = ""
         if message["photo"]:
             score += 0.15
-            feature = '[+0.15] - В сообщении содержится фотография\n'
+            feature = "[+0.15] - В сообщении содержится фотография\n"
         return score, feature
 
     def _check_not_spam_id(self, message):
@@ -240,10 +241,10 @@ class RuleBasedClassifier:
             float: The spam score of the message. If the `from_id` is in the `not_spam_id` list, the score is decreased by 1.0.
         """
         score = 0.0
-        feature = ''
+        feature = ""
         if message["from_id"] in self.not_spam_id:
             score -= 0.5
-            feature = '[-0.5] - Пользователь ранее не писал спам\n'
+            feature = "[-0.5] - Пользователь ранее не писал спам\n"
         return score, feature
 
     def _check_special_characters(self, message):
@@ -259,7 +260,7 @@ class RuleBasedClassifier:
         score = 0.0
         pattern = "[à-üÀ-Üα-ωΑ-ΩҐЄЇІґєїі&&[^ё̰]]"
         pattern += "|[Α-Ωα-ω̰]"
-        feature = ''
+        feature = ""
         result = re.findall(pattern, message["text"].lower())
         if result:
             score += len(result) * 0.1
@@ -277,10 +278,10 @@ class RuleBasedClassifier:
             float: The score for the length of the message.
         """
         score = 0.0
-        feature = ''
-        if len(message["text"]) < 5 and len(message['text']) != 0:
+        feature = ""
+        if len(message["text"]) < 5 and len(message["text"]) != 0:
             score += 0.1
-            feature = '[+0.1] - Сообщение чересчур короткое'
+            feature = "[+0.1] - Сообщение чересчур короткое"
         return score, feature
 
     def _check_words_fuzzy_not_enough(self, message):
@@ -294,7 +295,7 @@ class RuleBasedClassifier:
             float: The calculated score based on the presence of words from 'words_fuzzy_not_enough' list in the message text.
         """
         score = 0.0
-        feature = ''
+        feature = ""
         for word_fuzzy_not_enough in self.words_fuzzy_not_enough:
             for word in message["text"].split():
                 if word_fuzzy_not_enough == re.sub(r"[^a-zа-я]", "", word.lower()):
@@ -319,11 +320,11 @@ class RuleBasedClassifier:
 
         capital_letters = re.findall(capital_pattern, message["text"])
         letters = re.findall(pattern, message["text"])
-        feature = ''
+        feature = ""
         try:
             if len(capital_letters) / len(letters) > 0.4 and len(message["text"]) > 5:
                 score += 0.15
-                feature = '[+0.15] - Большая концентрация заглавных букв'
+                feature = "[+0.15] - Большая концентрация заглавных букв"
         except ZeroDivisionError:
             pass
         return score, feature
