@@ -31,7 +31,6 @@ def job(Model=RuleBasedClassifier) -> None:
     if isinstance(model, SpamLogisticRegression):
         model.fit(train.drop(columns="label"), train["label"])
         pred_scores = model.predict(test.drop(columns="label"))
-
     else:
         model.fit(train.drop(columns="label"), train["label"])
         pred_scores, _ = model.predict(test.drop(columns="label"))

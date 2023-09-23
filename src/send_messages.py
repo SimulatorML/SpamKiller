@@ -44,19 +44,24 @@ async def handle_msg_with_args(
     )
     photo = message.photo[-1].file_id if message.photo else None
     text = message.text or message.caption or ""
-    chat_id = message.chat.id
-    user_id = message.from_user.id
     user_info = await bot.get_chat(message.from_user.id)
-    user_description = user_info.bio
-    try:
-        text += f" [{message.entities[0].url}]"
-    except:
-        pass
+    user_description = user_info.bio or ""
+    spoiler_link = ""
+    if message.entities:  # Проверка на наличие сущностей в сообщении
+        for entity in message.entities:
+            if entity.type == "text_link":  # Если сущность является текстовой ссылкой
+                spoiler_link = " " + entity.url + " " or ""
+                break
+
+    text += spoiler_link
+    text += user_description
     print(message)
     print(message.chat.id)
     print(photo)
+    print(spoiler_link)
+    print(user_description)
     print(reply_to_message_id)
-    print([text + user_description])
+    print([text])
     print(message.from_id)
 
     X = {
