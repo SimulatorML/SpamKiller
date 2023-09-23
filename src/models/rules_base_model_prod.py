@@ -318,6 +318,8 @@ class RuleBasedClassifier:
             "\U0001F353",
             "\U0001F352",
             "\U0001F608",
+            "\U00002705",
+            "\U0001F4B0",
         ]
         emoji_pattern = re.compile("|".join(emojis))
 
