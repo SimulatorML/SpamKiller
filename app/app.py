@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import pandas as pd
 from dotenv import load_dotenv
@@ -60,13 +61,14 @@ dp = Dispatcher(
 
 
 async def on_startup(dp):
+    logger.info("Bot started")
     read_temp_list_with_new_user()
     for admin_id in ADMIN_IDS:
         await bot.send_message(admin_id, "Bot started")
 
 
 async def on_shutdown(dp):
-    logger.info("Bot started")
+    logger.info("Bot stopped")
     for admin_id in ADMIN_IDS:
         await bot.send_message(admin_id, "Bot stopped")
     await bot.close()
