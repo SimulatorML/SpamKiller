@@ -301,7 +301,7 @@ class FeatureEngineering:
         return df.apply(lambda photo: 1 if photo else 0)
 
     def _check_not_spam_id(self, df: pd.Series):
-        return df.apply(lambda from_id: -1 if from_id in self.not_spam_id else 0)
+        return df.apply(lambda from_id: -1 if int(re.sub(r'(channel|user)', '', from_id)) in self.not_spam_id else 0)
 
     def _check_special_characters(self, df: pd.Series):
         def regular_process(message_text: str):
