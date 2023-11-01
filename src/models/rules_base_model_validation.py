@@ -263,7 +263,7 @@ class RuleBasedClassifier:
             float: The calculated score based on the presence of special characters.
         """
         score = 0.0
-        pattern = "[^a-zA-Zа-яА-ЯёЁ0-9.,!?;:()[]{}+=*/%<>^&|\\-–—'\"#$_~ \t\n\r∞≈≤≥±∓√∛∜∫∑∏∂∇×÷⇒⇐⇔\\{}[]()^_&∧∨¬⊕⊖⊗⊘∈∉∪∩⊆⊇⊂⊃ℕℤℚℝℂ→↦]"
+        pattern = r"[^a-zA-Zа-яА-ЯёЁ0-9.,!?;:()[\]{}@+=*\/%<>^&|`\-–—'\"#$_~ \t\n\r∞≈≤≥±∓√∛∜∫∑∏∂∇×÷⇒⇐⇔\\^_&∧∨¬⊕⊖⊗⊘∈∉∪∩⊆⊇⊂⊃ℕℤℚℝℂ→↦^\U00010000-\U0010ffff]"
         feature = ""
         result = re.findall(pattern, message["text"].lower())
         if result:
@@ -358,6 +358,6 @@ class RuleBasedClassifier:
 
         if found_emojis:
             score += 0.15 * len(found_emojis)
-            feature += f"[+{round(score,1)}] - Содержатся подозрительные эмодзи"
+            feature += f"[+{round(score, 2)}] - Содержатся подозрительные эмодзи"
 
         return score, feature

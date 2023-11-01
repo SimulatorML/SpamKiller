@@ -46,6 +46,7 @@ async def handle_msg_with_args(
     text = message.text or message.caption or ""
     user_info = await bot.get_chat(message.from_user.id)
     user_description = user_info.bio or ""
+
     spoiler_link = ""
     if message.entities:  # Проверка на наличие сущностей в сообщении
         for entity in message.entities:
@@ -53,7 +54,14 @@ async def handle_msg_with_args(
                 spoiler_link = " " + entity.url + " " or ""
                 break
 
+    hidden_link = ""
+    if message.caption_entities:  # Проверка для скрытых ссылок в тексте в сообщении
+        for entity in message.caption_entities:
+            if entity.type == "text_link":  # Если сущность является текстовой ссылкой
+                hidden_link = " " + entity.url + " " or ""
+
     text += spoiler_link
+    text += hidden_link
     text += user_description
     print(message)
     print(message.chat.id)
