@@ -62,7 +62,6 @@ async def handle_msg_with_args(
 
     text += spoiler_link
     text += hidden_link
-    text += user_description
     print(message)
     print(message.chat.id)
     print(photo)
@@ -74,6 +73,7 @@ async def handle_msg_with_args(
 
     X = {
         "text": text,
+        "bio": user_description,
         "photo": photo,
         "from_id": message.from_id,
         "reply_to_message_id": reply_to_message_id,
@@ -145,10 +145,10 @@ async def handle_msg_with_args(
     spam_message_for_group = spam_message_for_admins
     # Send the same message to the groupы
     if photo is None:
-        if score >= 0.1:
-            await bot.send_message(
-                GROUP_CHAT_ID, spam_message_for_group, parse_mode="HTML"
-            )
+        # if score >= 0.1:
+        await bot.send_message(
+            GROUP_CHAT_ID, spam_message_for_group, parse_mode="HTML"
+        )
         for admin_id in ADMIN_IDS:
             await bot.send_message(admin_id, spam_message_for_admins, parse_mode="HTML")
 
