@@ -1,11 +1,11 @@
 import pandas as pd
 import yaml
 import fire
-from src.models.rules_base_model_validation import RuleBasedClassifier
+from src.models.rule_based_model_validation import RuleBasedClassifierValidation
 from src.models.logistic_regression import SpamLogisticRegression
 
 
-def job(Model=RuleBasedClassifier) -> None:
+def job(Model=RuleBasedClassifierValidation) -> None:
     """
     Runs a given model on a cleaned dataset of spam and non-spam messages, and saves the predicted scores
     and corresponding labels to a CSV file.

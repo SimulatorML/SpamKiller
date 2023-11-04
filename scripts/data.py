@@ -1,6 +1,6 @@
 import yaml
 import fire
-from src.data.data import Data
+from src.data import Data
 
 
 def job():

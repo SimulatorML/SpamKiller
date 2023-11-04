@@ -10,7 +10,7 @@ logger.info("Init rules_base_model")
 
 
 @dataclass
-class RuleBasedClassifier:
+class RuleBasedClassifierValidation:
     def __init__(self):
         """
         A class representing a rule-based spam classifier. The class contains methods for training and testing the model, as well as
