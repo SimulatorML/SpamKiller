@@ -47,6 +47,7 @@ class RuleBasedClassifierValidation:
                 "check": self._check_contains_dangerous_words,
             },
             {"name": "contains_spam_words", "check": self._check_contains_spam_words},
+            {"name": "contains_cyrillic_spoofing", "check": self._check_contains_cyrillic_spoofing},
             {"name": "contains_photo", "check": self._check_contains_photo},
             {"name": "contains_not_spam_id", "check": self._check_not_spam_id},
             {
@@ -98,6 +99,7 @@ class RuleBasedClassifierValidation:
             score, temp_name_features = self._predict_message(message)
             name_features += temp_name_features
             pred_scores.append(score)
+        
         return pred_scores, name_features
 
     def _predict_message(self, message):
@@ -117,6 +119,7 @@ class RuleBasedClassifierValidation:
             total_score += temp_score
             name_features += temp_name_features
         total_score_normalized = self._normalize_score(total_score, threshold=1)
+
         return total_score_normalized, name_features
 
     def _normalize_score(self, score, threshold):
@@ -136,6 +139,7 @@ class RuleBasedClassifierValidation:
             normalized_score = 0
         else:
             normalized_score = score / threshold
+        
         return normalized_score
 
     def _check_contains_telegram_link(self, message):
@@ -164,7 +168,7 @@ class RuleBasedClassifierValidation:
         else:
             score += 0.15
             feature = "[+0.15] - В сообщении содержится telegram ссылка\n"
-
+        
         return score, feature
 
     def _check_contains_stop_word(self, message):
@@ -184,6 +188,7 @@ class RuleBasedClassifierValidation:
             if fuzz.token_set_ratio(words.lower(), text.lower()) >= 77:
                 score += 0.30
                 feature += f'[+0.3] - В сообщении содержится: "{words}"\n'
+        
         return score, feature
 
     def _check_contains_dangerous_words(self, message):
@@ -203,6 +208,7 @@ class RuleBasedClassifierValidation:
             if fuzz.token_set_ratio(words.lower(), text.lower()) >= 77:
                 score += 0.15
                 feature += f'[+0.15] - В сообщении содержится: "{words}"\n'
+        
         return score, feature
 
     def _check_contains_spam_words(self, message):
@@ -222,6 +228,45 @@ class RuleBasedClassifierValidation:
             if fuzz.token_set_ratio(words.lower(), text.lower()) >= 90:
                 score += 0.5
                 feature += f'[+0.5] - В сообщении содержится: "{words}"\n'
+        
+        return score, feature
+    
+    def _check_contains_cyrillic_spoofing(self, message):
+        """
+        Checks if the given message contains Cyrillic Spoofing - substituting Cyrillic letters with 
+        similar-looking Latin ones to evade spam filters, e.g., replacing "и" with "i" in Russian words
+
+        Parameters:
+            message (dict): The message to check.
+
+        Returns:
+            float: The score based on whether the message contains a photo.
+        """
+        text = (message["text"] + '    ' + message.get("bio", "")).strip()
+        score = 0.0
+        feature = ""
+
+        patterns = [
+            r'(?:[а-яА-Я]+[a-zA-Z]+[а-яА-Я]+)',  # Слово начинается с рус буквы, потом англ, потом опять рус
+            r'(?:[a-zA-Z]+[а-яА-Я]+[a-zA-Z]+)' # Cлово начинается с англ буквы, потом рус, потом опять англ
+        ] # Не находит случаи, когда сначала идут рус буквы, а потом англ и наоборот, поскольку пользователь мог описаться
+
+        pattern = re.compile('|'.join(patterns))
+        result = re.findall(pattern, text)
+
+        spoofed_words = []
+        for word in text.split():
+            if re.findall(pattern, word):
+                score += 0.1
+                if word not in spoofed_words:
+                    spoofed_words.append(word)
+
+        if score <= 0.1:
+            score = 0.0
+            feature = ""
+        else:
+            feature = f'[+{round(score, 1)}] - Подмена кириллицы ({", ".join(spoofed_words[:3])})\n'
+        
         return score, feature
 
     def _check_contains_photo(self, message):
@@ -239,6 +284,7 @@ class RuleBasedClassifierValidation:
         if message["photo"]:
             score += 0.15
             feature = "[+0.15] - В сообщении содержится фотография\n"
+        
         return score, feature
 
     def _check_not_spam_id(self, message):
@@ -256,6 +302,7 @@ class RuleBasedClassifierValidation:
         if message["from_id"] in self.not_spam_id:
             score -= 0.5
             feature = "[-0.5] - Пользователь ранее не писал спам\n"
+        
         return score, feature
 
     def _check_special_characters(self, message):
@@ -270,12 +317,13 @@ class RuleBasedClassifierValidation:
         """
         text = (message["text"] + '    ' + message.get("bio", "")).strip()
         score = 0.0
-        pattern = r"[^a-zA-Zа-яА-ЯёЁ0-9.,…!?;:()[\]{}@+=*\/%<>^«»&|`\-⁃–—'\"”“‘’©#№$€_~ \t\n\r∞≈≤≥±∓√∛∜∫∑∏∂∇×÷⇒⇐⇔\\^_&∧∨¬⊕⊖⊗⊘∈∉∪∩⊆⊇⊂⊃ℕℤℚℝℂ→↦^\U00010000-\U0010ffff]"
         feature = ""
+        pattern = r"[^a-zA-Zа-яА-ЯёЁ0-9.,…!?;:()[\]{}@+=*\/%<>^«»&|`\-⁃–—'\"”“‘’©#№$€_~ \t\n\r∞≈≤≥±∓√∛∜∫∑∏∂∇×÷⇒⇐⇔\\^_&∧∨¬⊕⊖⊗⊘∈∉∪∩⊆⊇⊂⊃ℕℤℚℝℂ→↦^\U00010000-\U0010ffff]"
         result = re.findall(pattern, text.lower())
         if result:
             score += len(result) * 0.1
             feature = f'[+{round(len(result) * 0.1, 1)}] - Неразрешенные символы ({", ".join(result[:3])})\n'
+        
         return score, feature
 
     def _check_len_message(self, message):
@@ -293,6 +341,7 @@ class RuleBasedClassifierValidation:
         if len(message["text"]) < 5 and len(message["text"]) != 0:
             score += 0.1
             feature = "[+0.1] - Сообщение чересчур короткое"
+        
         return score, feature
 
     def _check_words_fuzzy_not_enough(self, message):
@@ -312,6 +361,7 @@ class RuleBasedClassifierValidation:
             for word in text.split():
                 if word_fuzzy_not_enough == re.sub(r"[^a-zа-я]", "", word.lower().strip()):
                     score += 0.15
+        
         return score, feature
 
     def _check_capital_letters(self, message):
@@ -339,6 +389,7 @@ class RuleBasedClassifierValidation:
                 feature = "[+0.15] - Большая концентрация заглавных букв"
         except ZeroDivisionError:
             pass
+        
         return score, feature
 
     def _contains_emoji(self, message):
