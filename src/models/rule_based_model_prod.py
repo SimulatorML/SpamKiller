@@ -287,7 +287,7 @@ class RuleBasedClassifier:
         text = (message["text"] + '    ' + message.get("bio", "")).strip()
         score = 0.0
         feature = ""
-        pattern = r"[^a-zA-Zа-яА-ЯёЁ0-9.,…!?;:()[\]{}@+=*\/%<>^«»&|`\-⁃–—'\"”“‘’©#№$€_~ \t\n\r∞≈≤≥±∓√∛∜∫∑∏∂∇×÷⇒⇐⇔\\^_&∧∨¬⊕⊖⊗⊘∈∉∪∩⊆⊇⊂⊃ℕℤℚℝℂ→↦^\U00010000-\U0010ffff]"
+        pattern = r"[^a-zA-Zа-яА-ЯёЁ0-9.,…!?;:()[\]{}@+=*\/%<>^«»&|`\-⁃–—'\"”“‘’©#№$€_~ \t\n\r∞≈≤≥±∓√∛∜∫∑∏∂∇×÷⇒⇐⇔\\^_&∧∨¬⊕⊖⊗⊘∈∉∪∩⊆⊇⊂⊃ℕℤℚℝℂ→↦^\U00000000-\U0010ffff]"
         result = re.findall(pattern, text.lower())
         if result:
             score += len(result) * 0.1
@@ -309,7 +309,7 @@ class RuleBasedClassifier:
         feature = ""
         if len(message["text"]) < 5 and len(message["text"]) != 0:
             score += 0.1
-            feature = "[+0.1] - Сообщение чересчур короткое"
+            feature = "[+0.1] - Сообщение чересчур короткое\n"
         
         return score, feature
 
@@ -355,7 +355,7 @@ class RuleBasedClassifier:
         try:
             if len(capital_letters) / len(letters) > 0.4 and len(text) > 5:
                 score += 0.15
-                feature = "[+0.15] - Большая концентрация заглавных букв"
+                feature = "[+0.15] - Большая концентрация заглавных букв\n"
         except ZeroDivisionError:
             pass
 
@@ -367,19 +367,24 @@ class RuleBasedClassifier:
         feature = ""
         # Unicode кодовые точки для эмодзи
         emojis = [
-            "\U00002757",
-            "\U00002753",
-            "\U0001F4A6",
-            "\U0001F4B5",
-            "\U0001F4A7",
-            "\U0001F346",
-            "\U0001F34C",
-            "\U0001F351",
-            "\U0001F353",
-            "\U0001F352",
-            "\U0001F608",
-            "\U00002705",
-            "\U0001F4B0",
+            "\U00002757", # Red Exclamation Mark
+            "\U00002753", # Question Mark Ornament
+            "\U0001F4A6", # Sweat Droplets
+            "\U0001F4B5", # Dollar Banknote
+            "\U0001F4B0", # Money Bag
+            "\U0001F4A7", # Droplet
+            "\U0001F346", # Eggplant
+            "\U0001F34C", # Banana
+            "\U0001F351", # Peach
+            "\U0001F353", # Strawberry
+            "\U0001F352", # Cherries
+            "\U0001F608", # Smiling Face with Horns
+            "\U00002705", # White Heavy Check Mark
+            "\U0001F381", # Wrapped Present
+            "\U0001F48E", # Gem Stone
+            "\U0001F911", # Money-Mouth Face
+            "\U00002728", # Sparkles 
+            "\U0001F6A8" # Police Cars Revolving Light
         ]
         emoji_pattern = re.compile("|".join(emojis))
 
@@ -387,6 +392,6 @@ class RuleBasedClassifier:
 
         if found_emojis:
             score += 0.15 * len(found_emojis)
-            feature += f"[+{round(score, 2)}] - Содержатся подозрительные эмодзи"
+            feature += f"[+{round(score, 2)}] - Содержатся подозрительные эмодзи ({', '.join(found_emojis[:3])})\n"
 
         return score, feature
