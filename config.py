@@ -1,10 +1,12 @@
 import os
+import openai
 from dotenv import load_dotenv
 
 
 # Load environment variables
 load_dotenv()
 
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") # Get OpenAI API Key from environment variable
 BOT_TOKEN = os.getenv("API_KEY_SPAM_KILLER") # Get token from environment variable
 ADMIN_IDS = (
     os.getenv("ADMIN_IDS").split(",") if os.getenv("ADMIN_IDS") else []
