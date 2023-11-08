@@ -1,10 +1,13 @@
-import openai
-import yaml
-import pandas as pd
-import numpy as np
+import asyncio
+from functools import partial
 from textwrap import dedent
-from config import OPENAI_API_KEY
+from typing import Optional, Tuple
+import pandas as pd
+import yaml
 from loguru import logger
+import openai
+from openai import OpenAIError
+from config import OPENAI_API_KEY
 
 
 class GptSpamClassifier:
@@ -21,9 +24,14 @@ class GptSpamClassifier:
             "not_spam_id"
         ].tolist()
 
+        with open("./prompts.yml", "r") as f:
+            prompts = yaml.safe_load(f)
+        
+        self.prompt = prompts["spam_classification_prompt"]
+
         logger.info("Initialized GptClassifier")
 
-    def predict(self, X: pd.DataFrame) -> dict:
+    async def predict(self, X: pd.DataFrame) -> dict:
         """
         Predicts if the message is spam or not.
 
@@ -38,66 +46,74 @@ class GptSpamClassifier:
 
         if not all(column in X for column in ['text', 'bio', 'from_id']):
             logger.error("Input DataFrame does not contain required columns: 'text', 'bio', 'from_id'.")
-            return {'label': None, 'reasons': "Input is missing required columns.", 'tokens': 0}
+            return {'label': None, 'reasons': "Input is missing required columns.", 'prompt_tokens': 0, 'completion_tokens': 0}
         
         text = X['text'].iloc[0]
         bio = X['bio'].iloc[0]
         from_id = X['from_id'].iloc[0]
-        not_spam = "yes" if from_id in self.not_spam_ids else "no"
+        has_chat_history = "yes" if from_id in self.not_spam_ids else "no"
 
-        prompt = self._create_prompt(text, bio, not_spam)
+        prompt = self._create_prompt(text, bio, has_chat_history)
+
         try:
-            logger.info("Sending request to OpenAI...")
-
-            # Call the OpenAI API to get a response
-            response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo", 
-                messages=[{"role": "user", "content": f"{prompt}"}]
-            )
+            # Call the _api_call method with a timeout
+            response = await asyncio.wait_for(self._api_call(prompt), timeout=15)
 
             # Interpret the API response
+            prompt_tokens = response.usage.prompt_tokens
+            completion_tokens = response.usage.completion_tokens
             response_text = response.choices[0].message.content
-            tokens = response.usage.completion_tokens
 
             label, reasons = self._process_response(response_text)
-
+            if label is None:
+                logger.error("Couldn't interpret the OpenAI response")
+                return {'label': None, 'reasons': "Couldn't interpret the OpenAI response", 'prompt_tokens': 0, 'completion_tokens': 0}
+            
             logger.info("Succesfully received response from OpenAI")
-            return {'label': label, 'reasons': reasons, 'tokens': tokens}
-
+            return {'label': label, 'reasons': reasons, 'prompt_tokens': prompt_tokens, 'completion_tokens': completion_tokens}
+        except asyncio.TimeoutError:
+            # Handle the TimeoutError
+            logger.error("The prediction took too long and was aborted after 15 seconds.")
+            return {'label': None, 'reasons': 'Prediction timed out.', 'prompt_tokens': 0, 'completion_tokens': 0}
+        except OpenAIError as e:
+            # Handle OpenAI API errors
+            logger.exception("An error occurred with the OpenAI API: %s", e)
+            return {'label': None, 'reasons': f'An OpenAI API error occurred: {e}', 'prompt_tokens': 0, 'completion_tokens': 0}
         except Exception as e:
-            logger.exception("An error occurred while predicting spam: %s", e)
-            return {'label': None, 'reasons': f'An error occurred: {e}', 'tokens': 0}
+            # Handle other unforeseen errors
+            logger.exception("An unexpected error occurred: %s", e)
+            return {'label': None, 'reasons': f'An unexpected error occurred: {e}', 'prompt_tokens': 0, 'completion_tokens': 0}
         
-    @staticmethod
-    def _create_prompt(message: str, bio: str = None, not_spam: str = None) -> str:
+    def _create_prompt(self, message: str, bio: str = None, has_chat_history: str = None) -> str:
         """Create a prompt for the GPT model to classify the message."""
-        prompt = dedent(f""" \
-            Is this message a spam? Also, consider user's bio and feature: user has history in chat - {not_spam}.
-            Try to minimize False-Positive cases.
-            Reply only with tag <spam> if the message is spam, else <ham>. 
-            Second line must start with "Reasons:". 
-            Third and further line represent a short numeric list of few reasons why this decision
-            <bio>
-            {bio}
-            </bio>
-            <message>
-            {message}
-            </message>
-            """)
-        
+        prompt = self.prompt.format(message_text=message, profile_bio=bio, has_chat_history=has_chat_history)
+        logger.debug(f"Created prompt: {prompt}")
         return prompt
     
+    async def _api_call(self, prompt: str):
+        """Call the OpenAI API to get a response."""
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            None,  # Executor, None uses the default executor (a new thread)
+            partial(
+                self.client.chat.completions.create,
+                model="gpt-3.5-turbo", 
+                messages=[{"role": "user", "content": prompt}]
+            )
+        )
+        return response
+    
     @staticmethod
-    def _process_response(response: str) -> tuple[int, str]:
+    def _process_response(response: str) -> Tuple[Optional[int], Optional[str]]:
         """Process the response from OpenAI and extract the label and reasons."""
         lines = response.strip().split("\n")
         if not lines:
             return None, None
         
          # Determine the label based on the first line
-        label = 1 if "<spam>" in lines[0] else 0 if "<ham>" in lines[0] else None
+        label = 1 if "<spam>" in lines[0] else 0 if "<not-spam>" in lines[0] else None
 
-        # Join all lines except the first to form the reasons string
-        reasons = "\n".join(lines[1:])
+        # Join all lines except the first to form the reasons string; Empty if label == 0
+        reasons = "\n".join(lines[1:]) if label == 1 else ''
 
         return label, reasons
