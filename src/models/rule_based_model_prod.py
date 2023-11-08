@@ -6,9 +6,6 @@ import pandas as pd
 from fuzzywuzzy import fuzz
 
 
-logger.info("Init rules_base_model")
-
-
 @dataclass
 class RuleBasedClassifier:
     def __init__(self):
@@ -68,6 +65,8 @@ class RuleBasedClassifier:
             },
             {"name": "contains_emoji", "check": self._contains_emoji},
         ]
+
+        logger.info("Initialized RuleBasedClassifier")
 
     def predict(self, X):
         """

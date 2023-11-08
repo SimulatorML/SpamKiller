@@ -6,8 +6,6 @@ import pandas as pd
 from fuzzywuzzy import fuzz
 from tqdm import tqdm
 
-logger.info("Init rules_base_model")
-
 
 @dataclass
 class RuleBasedClassifierValidation:
@@ -65,6 +63,8 @@ class RuleBasedClassifierValidation:
             },
             {"name": "contains_emoji", "check": self._contains_emoji},
         ]
+
+        logger.info("Initialized RuleBasedClassifierValidation")
 
     def fit(self, X, y):
         """

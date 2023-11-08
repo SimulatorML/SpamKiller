@@ -8,7 +8,7 @@ from loguru import logger
 
 
 class GptSpamClassifier:
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str = OPENAI_API_KEY):
         """Initialize the classifier with an OpenAI API key."""
         self.api_key = api_key
         self.client = openai.OpenAI(api_key=api_key)
@@ -43,9 +43,9 @@ class GptSpamClassifier:
         text = X['text'].iloc[0]
         bio = X['bio'].iloc[0]
         from_id = X['from_id'].iloc[0]
-        spam_id = "no" if from_id in self.not_spam_ids else "no info"
+        not_spam = "yes" if from_id in self.not_spam_ids else "no"
 
-        prompt = self._create_prompt(text, bio, spam_id)
+        prompt = self._create_prompt(text, bio, not_spam)
         try:
             logger.info("Sending request to OpenAI...")
 
@@ -69,11 +69,14 @@ class GptSpamClassifier:
             return {'label': None, 'reasons': f'An error occurred: {e}', 'tokens': 0}
         
     @staticmethod
-    def _create_prompt(message: str, bio: str = None, spam_id: str = None) -> str:
+    def _create_prompt(message: str, bio: str = None, not_spam: str = None) -> str:
         """Create a prompt for the GPT model to classify the message."""
         prompt = dedent(f""" \
-            Is this message a spam? Also, consider user's bio and feature: user has sent spam-messages earlier - {spam_id}
-            Reply only with tag <spam> if the message is spam, else <ham>. Second line must start with "Reasons:". Third and further line represent a short numeric list of few reasons why this decision
+            Is this message a spam? Also, consider user's bio and feature: user has history in chat - {not_spam}.
+            Try to minimize False-Positive cases.
+            Reply only with tag <spam> if the message is spam, else <ham>. 
+            Second line must start with "Reasons:". 
+            Third and further line represent a short numeric list of few reasons why this decision
             <bio>
             {bio}
             </bio>

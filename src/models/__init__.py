@@ -1,1 +1,2 @@
 from .rule_based_model_prod import RuleBasedClassifier
+from .gpt_classifier import GptSpamClassifier
