@@ -47,10 +47,20 @@ class GptSpamClassifier:
         if not all(column in X for column in ['text', 'bio', 'from_id']):
             logger.error("Input DataFrame does not contain required columns: 'text', 'bio', 'from_id'.")
             return {'label': None, 'reasons': "Input is missing required columns.", 'prompt_tokens': 0, 'completion_tokens': 0}
-        
-        text = X['text'].iloc[0]
-        bio = X['bio'].iloc[0]
-        from_id = X['from_id'].iloc[0]
+         
+        # Create a task for each row in the DataFrame
+        tasks = [self._predict_row(X.iloc[i]) for i in range(len(X))]
+
+        # Run all tasks concurrently
+        results = await asyncio.gather(*tasks)
+        logger.info('Succesfully predicted')
+
+        return results
+    
+    async def _predict_row(self, row):
+        text = row['text']
+        bio = row['bio']
+        from_id = row['from_id']
         has_chat_history = "yes" if from_id in self.not_spam_ids else "no"
 
         prompt = self._create_prompt(text, bio, has_chat_history)
@@ -69,7 +79,7 @@ class GptSpamClassifier:
                 logger.error("Couldn't interpret the OpenAI response")
                 return {'label': None, 'reasons': "Couldn't interpret the OpenAI response", 'prompt_tokens': 0, 'completion_tokens': 0}
             
-            logger.info("Succesfully received response from OpenAI")
+            logger.debug("Succesfully received response from OpenAI")
             return {'label': label, 'reasons': reasons, 'prompt_tokens': prompt_tokens, 'completion_tokens': completion_tokens}
         except asyncio.TimeoutError:
             # Handle the TimeoutError
