@@ -1,4 +1,5 @@
 import asyncio
+import time
 from functools import partial
 from textwrap import dedent
 from typing import Optional, Tuple
@@ -46,7 +47,7 @@ class GptSpamClassifier:
 
         if not all(column in X for column in ['text', 'bio', 'from_id']):
             logger.error("Input DataFrame does not contain required columns: 'text', 'bio', 'from_id'.")
-            return {'label': None, 'reasons': "Input is missing required columns.", 'prompt_tokens': 0, 'completion_tokens': 0}
+            return {'label': None, 'reasons': "Input is missing required columns.", 'prompt_tokens': 0, 'completion_tokens': 0, 'time_spent': 0}
          
         # Create a task for each row in the DataFrame
         tasks = [self._predict_row(X.iloc[i]) for i in range(len(X))]
@@ -58,6 +59,9 @@ class GptSpamClassifier:
         return results
     
     async def _predict_row(self, row):
+        start_time = time.time()
+        time_spent = None
+
         text = row['text']
         bio = row['bio']
         from_id = row['from_id']
@@ -75,24 +79,29 @@ class GptSpamClassifier:
             response_text = response.choices[0].message.content
 
             label, reasons = self._process_response(response_text)
+            time_spent = round(time.time() - start_time, 1)
+
             if label is None:
                 logger.error("Couldn't interpret the OpenAI response")
-                return {'label': None, 'reasons': "Couldn't interpret the OpenAI response", 'prompt_tokens': 0, 'completion_tokens': 0}
+                return {'label': None, 'reasons': "Couldn't interpret the OpenAI response", 'prompt_tokens': 0, 'completion_tokens': 0, 'time_spent': time_spent}
             
             logger.debug("Succesfully received response from OpenAI")
-            return {'label': label, 'reasons': reasons, 'prompt_tokens': prompt_tokens, 'completion_tokens': completion_tokens}
+            return {'label': label, 'reasons': reasons, 'prompt_tokens': prompt_tokens, 'completion_tokens': completion_tokens, 'time_spent': time_spent}
         except asyncio.TimeoutError:
             # Handle the TimeoutError
+            time_spent = round(time.time() - start_time, 1)
             logger.error("The prediction took too long and was aborted after 15 seconds.")
-            return {'label': None, 'reasons': 'Prediction timed out.', 'prompt_tokens': 0, 'completion_tokens': 0}
+            return {'label': None, 'reasons': 'Prediction timed out.', 'prompt_tokens': 0, 'completion_tokens': 0, 'time_spent': time_spent}
         except OpenAIError as e:
             # Handle OpenAI API errors
+            time_spent = round(time.time() - start_time, 1) if time_spent is None else time_spent
             logger.exception("An error occurred with the OpenAI API: %s", e)
-            return {'label': None, 'reasons': f'An OpenAI API error occurred: {e}', 'prompt_tokens': 0, 'completion_tokens': 0}
+            return {'label': None, 'reasons': f'An OpenAI API error occurred: {e}', 'prompt_tokens': 0, 'completion_tokens': 0, 'time_spent': time_spent}
         except Exception as e:
             # Handle other unforeseen errors
+            time_spent = round(time.time() - start_time, 1) if time_spent is None else time_spent
             logger.exception("An unexpected error occurred: %s", e)
-            return {'label': None, 'reasons': f'An unexpected error occurred: {e}', 'prompt_tokens': 0, 'completion_tokens': 0}
+            return {'label': None, 'reasons': f'An unexpected error occurred: {e}', 'prompt_tokens': 0, 'completion_tokens': 0, 'time_spent': time_spent}
         
     def _create_prompt(self, message: str, bio: str = None, has_chat_history: str = None) -> str:
         """Create a prompt for the GPT model to classify the message."""
