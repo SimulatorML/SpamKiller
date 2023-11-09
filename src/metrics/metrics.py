@@ -353,3 +353,63 @@ class BootstrapCurve(Plot):
         plt.ylabel("Precision" if self.metric == "precision_recall" else "Specificity")
         plt.legend()
         plt.show()
+
+
+def calculate_recall(y_true, y_pred):
+    """
+    Calculate the recall, also known as sensitivity or true positive rate.
+
+    Parameters
+    ----------
+    y_true : array-like of shape (n_samples,)
+        True binary labels in binary classification.
+    y_pred : array-like of shape (n_samples,)
+        Predicted binary labels in binary classification.
+
+    Returns
+    -------
+    recall : float
+        The recall metric as a float.
+    """
+    tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
+    return tp / (tp + fn) if (tp + fn) > 0 else 0
+
+
+def calculate_specificity(y_true, y_pred):
+    """
+    Calculate the specificity, also known as true negative rate.
+
+    Parameters
+    ----------
+    y_true : array-like of shape (n_samples,)
+        True binary labels in binary classification.
+    y_pred : array-like of shape (n_samples,)
+        Predicted binary labels in binary classification.
+
+    Returns
+    -------
+    specificity : float
+        The specificity metric as a float.
+    """
+    tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
+    return tn / (tn + fp) if (tn + fp) > 0 else 0
+
+
+def calculate_precision(y_true, y_pred):
+    """
+    Calculate the precision, also known as the positive predictive value.
+
+    Parameters
+    ----------
+    y_true : array-like of shape (n_samples,)
+        True binary labels in binary classification.
+    y_pred : array-like of shape (n_samples,)
+        Predicted binary labels in binary classification.
+
+    Returns
+    -------
+    precision : float
+        The precision metric as a float.
+    """
+    tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
+    return tp / (tp + fp) if (tp + fp) > 0 else 0
