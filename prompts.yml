@@ -5,7 +5,7 @@ spam_classification_prompt: |
   - Profile bio
   - Chat history: Profiles that have not sent any messages in chat are scrutinized more closely.
 
-  Classify each message as "<spam>" or "<not-spam>". For messages identified as spam, list the reasons in a concise numeric format without empty lines starting with "Reasons:". Treat ambiguous cases as "<not-spam>" and note the factors considered.
+  Classify each message as "<spam>" or "<not-spam>". For messages identified as spam, list 2-3 short reasons in a concise numeric format without empty lines starting with "Reasons:". If you aren't sure about case consider it as <not-spam>
 
   Input Data:
   - Message text: """{message_text}"""
