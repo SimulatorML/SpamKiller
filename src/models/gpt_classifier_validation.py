@@ -11,19 +11,14 @@ from openai import OpenAIError
 from config import OPENAI_API_KEY
 
 
-class GptSpamClassifier:
+class GptSpamClassifierValidation:
     def __init__(self, api_key: str = OPENAI_API_KEY):
         """Initialize the classifier with an OpenAI API key."""
         self.api_key = api_key
         self.client = openai.OpenAI(api_key=api_key)
 
-        with open("./config.yml", "r") as f:
-            config = yaml.safe_load(f)
-            self.path_not_spam_id = config["path_not_spam_id"]
-
-        self.not_spam_ids = pd.read_csv(self.path_not_spam_id, sep=";")[
-            "not_spam_id"
-        ].tolist()
+        # Due to inability to get user_id when loading new data from Spam Monitoring channels, usernames are used instead in Validation model
+        self.not_spam_ids = [] # list filles in when fitting the model
 
         with open("./prompts.yml", "r") as f:
             prompts = yaml.safe_load(f)
@@ -31,6 +26,22 @@ class GptSpamClassifier:
         self.prompt = prompts["spam_classification_prompt"]
 
         logger.info("Initialized GptClassifier")
+
+    def fit(self, X: pd.DataFrame, y) -> None:
+        """
+        Fits the model to the training data.
+
+        Parameters:
+            X (pandas DataFrame): The input features of shape (n_samples, n_features).
+            y (pandas DataFrame or numpy array): The target labels of shape (n_samples,).
+
+        Returns:
+            None
+        """
+        not_spam_mask = y == 0
+        self.not_spam_ids = X[not_spam_mask].from_id.to_list()
+        logger.info('The model was successfully fitted')
+        return None
 
     async def predict(self, X: pd.DataFrame) -> dict:
         """
