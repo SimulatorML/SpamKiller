@@ -4,6 +4,7 @@ from functools import partial
 from textwrap import dedent
 from typing import Optional, Tuple
 import pandas as pd
+import numpy as np
 import yaml
 from loguru import logger
 import openai
@@ -39,7 +40,8 @@ class GptSpamClassifierValidation:
             None
         """
         not_spam_mask = y == 0
-        self.not_spam_ids = X[not_spam_mask].from_id.to_list()
+        not_none_username_mask = X['from_id'].apply(lambda x: True if x is not np.NaN else False)
+        self.not_spam_ids = X[(not_spam_mask) & (not_none_username_mask)]['from_id'].unique() # Using username column due to loaded data. Originally there are ids
         logger.info('The model was successfully fitted')
         return None
 
@@ -127,7 +129,7 @@ class GptSpamClassifierValidation:
             None,  # Executor, None uses the default executor (a new thread)
             partial(
                 self.client.chat.completions.create,
-                model="gpt-3.5-turbo", 
+                model="gpt-3.5-turbo-1106", 
                 messages=[{"role": "user", "content": prompt}]
             )
         )

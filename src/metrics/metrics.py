@@ -371,7 +371,7 @@ def calculate_recall(y_true, y_pred):
     recall : float
         The recall metric as a float.
     """
-    tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
+    tn, fp, fn, tp = confusion_matrix(y_true, y_pred, labels=[0, 1]).ravel()
     return tp / (tp + fn) if (tp + fn) > 0 else 0
 
 
@@ -391,7 +391,7 @@ def calculate_specificity(y_true, y_pred):
     specificity : float
         The specificity metric as a float.
     """
-    tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
+    tn, fp, fn, tp = confusion_matrix(y_true, y_pred, labels=[0, 1]).ravel()
     return tn / (tn + fp) if (tn + fp) > 0 else 0
 
 
@@ -411,5 +411,77 @@ def calculate_precision(y_true, y_pred):
     precision : float
         The precision metric as a float.
     """
-    tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
+    tn, fp, fn, tp = confusion_matrix(y_true, y_pred, labels=[0, 1]).ravel()
     return tp / (tp + fp) if (tp + fp) > 0 else 0
+
+
+def calculate_FPR(y_true, y_pred):
+    """
+    Calculate the False Positive Rate (FPR).
+
+    The False Positive Rate is defined as the proportion of negative instances that are incorrectly classified as positive. 
+    This function uses a confusion matrix to calculate FPR.
+
+    Parameters
+    ----------
+    y_true : array-like
+        True labels of the data. Must be binary (0s and 1s).
+    y_pred : array-like
+        Predicted labels by the classifier. Must be binary (0s and 1s).
+
+    Returns
+    -------
+    float
+        The False Positive Rate (FPR) calculated as fp / (fp + tn).
+
+    Notes
+    -----
+    FPR = FP / (FP + TN), where FP is the number of false positives and TN is the number of true negatives.
+
+    Examples
+    --------
+    >>> from sklearn.metrics import confusion_matrix
+    >>> y_true = [0, 1, 0, 1]
+    >>> y_pred = [0, 1, 1, 0]
+    >>> calculate_FPR(y_true, y_pred)
+    0.5
+    """
+    tn, fp, fn, tp = confusion_matrix(y_true, y_pred, labels=[0, 1]).ravel()
+    FPR = fp / (fp + tn)
+    return FPR
+
+
+def calculate_FNR(y_true, y_pred):
+    """
+    Calculate the False Negative Rate (FNR).
+
+    The False Negative Rate is defined as the proportion of positive instances that are incorrectly classified as negative. 
+    This function uses a confusion matrix to calculate FNR.
+
+    Parameters
+    ----------
+    y_true : array-like
+        True labels of the data. Must be binary (0s and 1s).
+    y_pred : array-like
+        Predicted labels by the classifier. Must be binary (0s and 1s).
+
+    Returns
+    -------
+    float
+        The False Negative Rate (FNR) calculated as fn / (fn + tp).
+
+    Notes
+    -----
+    FNR = FN / (FN + TP), where FN is the number of false negatives and TP is the number of true positives.
+
+    Examples
+    --------
+    >>> from sklearn.metrics import confusion_matrix
+    >>> y_true = [0, 1, 0, 1]
+    >>> y_pred = [0, 1, 1, 0]
+    >>> calculate_FNR(y_true, y_pred)
+    0.5
+    """
+    tn, fp, fn, tp = confusion_matrix(y_true, y_pred, labels=[0, 1]).ravel()
+    FNR = fn / (fn + tp)
+    return FNR

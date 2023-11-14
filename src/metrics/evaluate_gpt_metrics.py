@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 from loguru import logger
 from src.models.gpt_classifier_validation import GptSpamClassifierValidation
-from src.metrics import calculate_recall, calculate_specificity, calculate_precision
+from src.metrics import calculate_recall, calculate_specificity, calculate_precision, calculate_FPR, calculate_FNR
 
 
 # Defining prices for gpt-3.5-turbo
@@ -27,7 +27,7 @@ def load_data(yaml_key: str = "test_gpt_data_path") -> pd.DataFrame:
 
 def save_predicted_data(data: pd.DataFrame, file_path: str, file_name: str, sep: str = ';'):
     """Saving predicted data by a model"""
-    data.to_csv(f"{file_path}/{file_name}", sep=sep, index=False)
+    data.to_csv(f"{file_path}/{file_name}", sep=sep)
 
     logger.info(f"Saved {file_path}/{file_name}")
 
@@ -43,7 +43,7 @@ def evaluate_metrics():
     test_data = load_data(yaml_key="test_gpt_data_path")
     test_data['text'] = test_data['text'].fillna('')
     test_data['bio'] = test_data['bio'].fillna('')
-    
+
     X_test = test_data.drop('label', axis=1)
     y_test = test_data['label']
     
@@ -85,8 +85,8 @@ def evaluate_metrics():
 
     all_pred_labels = [item['label'] for item in response] # Getting all the predicted and failed cases
     sucessfully_predicted = [True if item in [0, 1] else False for item in all_pred_labels] # Getting mask of those cases that were successfully predicted
-    y_true = np.array(y_test[sucessfully_predicted]) # Making y_true for cases OpenAI managed to predict and not fail
-    y_pred = np.array([item['label'] for item in response if item['label'] is not None]) # Making y_pred for cases OpenAI managed to predict and not fail
+    y_true = np.array(y_test[sucessfully_predicted], dtype='int64') # Making y_true for cases OpenAI managed to predict and not fail
+    y_pred = np.array([item['label'] for item in response if item['label'] is not None], dtype='int64') # Making y_pred for cases OpenAI managed to predict and not fail
 
     prompt_tokens = np.array([item['prompt_tokens'] for item in response if item['label'] is not None]) # If not error
     completion_tokens = np.array([item['completion_tokens'] for item in response if item['label'] is not None])
@@ -106,9 +106,14 @@ def evaluate_metrics():
     specificity = calculate_specificity(y_true, y_pred)
     precision = calculate_precision(y_true, y_pred)
 
+    fpr = calculate_FPR(y_true, y_pred)
+    fnr = calculate_FNR(y_true, y_pred)
+
     logger.info(f"Recall: {round(recall, 5)}")
     logger.info(f"Specificity: {round(specificity, 5)}")
     logger.info(f"Precision: {round(precision, 5)}")
+    logger.info(f"FPR: {round(fpr, 5)}")
+    logger.info(f"FNR: {round(fnr, 5)}")
 
     # Calculate business-metrics
     not_spam_mask = y_pred == 0

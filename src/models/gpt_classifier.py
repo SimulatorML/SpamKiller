@@ -116,7 +116,7 @@ class GptSpamClassifier:
             None,  # Executor, None uses the default executor (a new thread)
             partial(
                 self.client.chat.completions.create,
-                model="gpt-3.5-turbo", 
+                model="gpt-3.5-turbo-1106", 
                 messages=[{"role": "user", "content": prompt}]
             )
         )
