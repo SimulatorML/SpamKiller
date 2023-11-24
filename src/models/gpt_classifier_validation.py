@@ -1,22 +1,24 @@
 import asyncio
 import time
-from functools import partial
-from textwrap import dedent
 from typing import Optional, Tuple
 import pandas as pd
 import numpy as np
 import yaml
+import httpx
 from loguru import logger
 import openai
 from openai import OpenAIError
-from config import OPENAI_API_KEY
+from config import OPENAI_API_KEY, OPENAI_COMPLETION_OPTIONS, PROXY_URL
 
 
 class GptSpamClassifierValidation:
-    def __init__(self, api_key: str = OPENAI_API_KEY):
+    def __init__(self, api_key: str = OPENAI_API_KEY, proxy: str = PROXY_URL):
         """Initialize the classifier with an OpenAI API key."""
         self.api_key = api_key
-        self.client = openai.OpenAI(api_key=api_key)
+
+        # If proxy is provided in .env file, it will be used when making requests to opeanai api
+        http_client = httpx.AsyncClient(proxies=proxy) if proxy else None 
+        self.client = openai.AsyncOpenAI(api_key=api_key, http_client=http_client)
 
         # Due to inability to get user_id when loading new data from Spam Monitoring channels, usernames are used instead in Validation model
         self.not_spam_ids = [] # list filles in when fitting the model
@@ -77,14 +79,12 @@ class GptSpamClassifierValidation:
 
         text = row['text'][:600]
         bio = row['bio'][:100]
-        from_id = row['from_id']
-        has_chat_history = "yes" if from_id in self.not_spam_ids else "no"
 
-        prompt = self._create_prompt(text, bio, has_chat_history)
+        prompt = self._create_prompt(text, bio)
 
         try:
             # Call the _api_call method with a timeout
-            response = await asyncio.wait_for(self._api_call(prompt), timeout=15)
+            response = await asyncio.wait_for(self._api_call(prompt), timeout=5)
 
             # Interpret the API response
             prompt_tokens = response.usage.prompt_tokens
@@ -96,6 +96,7 @@ class GptSpamClassifierValidation:
 
             if label is None:
                 logger.error("Couldn't interpret the OpenAI response")
+                logger.debug(f"Response text: {response_text}")
                 return {'label': None, 'reasons': "Couldn't interpret the OpenAI response", 'prompt_tokens': 0, 'completion_tokens': 0, 'time_spent': time_spent}
             
             logger.debug("Succesfully received response from OpenAI")
@@ -116,22 +117,18 @@ class GptSpamClassifierValidation:
             logger.exception("An unexpected error occurred: %s", e)
             return {'label': None, 'reasons': f'An unexpected error occurred: {e}', 'prompt_tokens': 0, 'completion_tokens': 0, 'time_spent': time_spent}
         
-    def _create_prompt(self, message: str, bio: str = None, has_chat_history: str = None) -> str:
+    def _create_prompt(self, message: str, bio: str = None) -> str:
         """Create a prompt for the GPT model to classify the message."""
-        prompt = self.prompt.format(message_text=message, profile_bio=bio, has_chat_history=has_chat_history)
-        logger.debug(f"Created prompt: {prompt}")
+        prompt = self.prompt.format(message_text=message, profile_bio=bio)
         return prompt
     
-    async def _api_call(self, prompt: str):
+    async def _api_call(self, prompt: str, openai_completion_options=OPENAI_COMPLETION_OPTIONS):
         """Call the OpenAI API to get a response."""
-        loop = asyncio.get_event_loop()
-        response = await loop.run_in_executor(
-            None,  # Executor, None uses the default executor (a new thread)
-            partial(
-                self.client.chat.completions.create,
-                model="gpt-3.5-turbo-1106", 
-                messages=[{"role": "user", "content": prompt}]
-            )
+        logger.info("Sending request to OpenAI API...")
+        response = await self.client.chat.completions.create(
+            model="gpt-3.5-turbo-1106",
+            messages=[{"role": "user", "content": prompt}],
+            **openai_completion_options
         )
         return response
     
