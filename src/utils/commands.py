@@ -1,3 +1,4 @@
+import yaml
 from aiogram import types
 from typing import List
 from loguru import logger
@@ -61,3 +62,13 @@ async def delete_admin(message: types.Message, ADMIN_IDS: List[str]):
         logger.info("Moderator removed")
     else:
         await message.answer("Invalid ID or ID not found")
+
+def add_user_to_whitelist(user_id: int):
+    with open("./config.yml", "r") as f:
+        config = yaml.safe_load(f)
+        path_whitelist_users = config["whitelist_users"]
+
+    with open(path_whitelist_users, 'a') as file:
+        file.write('\n' + str(user_id))
+    
+    logger.info(f'User {user_id} was successfully added to whitelist_users.txt')

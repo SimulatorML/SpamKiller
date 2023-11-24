@@ -12,7 +12,7 @@ from config import (
     WHITELIST_ADMINS
 )
 from src.app.loader import bot, dp, gpt_classifier, rule_based_classifier
-from src.utils.send_messages import handle_msg_with_args
+from src.utils.spam_detection import handle_msg_with_args
 from src.utils.add_new_user_id import add_new_member
 
 

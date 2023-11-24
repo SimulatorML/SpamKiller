@@ -1,17 +1,17 @@
-from aiogram import Bot, Dispatcher
+from aiogram import Bot, Dispatcher, types
 from loguru import logger
 from config import BOT_TOKEN
-from src.models import RuleBasedClassifier
+from src.models import RuleBasedClassifier, GptSpamClassifier
 
 
 # Add logger to file with level INFO
 logger.add("logs/logs_from_spam_killer.log", level="INFO")
 
-# Initialize classifier model
-classifier = RuleBasedClassifier()
-logger.info("Initialized Model")
+# Initialize models
+gpt_classifier = GptSpamClassifier()
+rule_based_classifier = RuleBasedClassifier()
 
-bot = Bot(token=BOT_TOKEN)
+bot = Bot(token=BOT_TOKEN, parse_mode=types.ParseMode.HTML)
 logger.info("Initialized Bot")
 
 # Initialize dispatcher for bot. Dispatcher is a class that process all incoming updates and handle them to registered handlers
