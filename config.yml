@@ -11,8 +11,8 @@ labels_and_scores: dataset/labels_and_scores.csv
 
 train_path: dataset/train.csv
 test_path: dataset/test.csv
-train_gpt_data_path: data/dataset/train_gpt.csv
-test_gpt_data_path: data/dataset/test_gpt.csv
+train_gpt_data_path: data/dataset/train_15-11-23.csv
+test_gpt_data_path: data/dataset/test_new_profiles_15-11-23.csv
 
 stop_words: data/rules_base_model/stop_words.csv
 dangerous_words: data/rules_base_model/dangerous_words.csv
