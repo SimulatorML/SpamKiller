@@ -83,7 +83,7 @@ class RuleBasedClassifier:
         total_score = 0.0
         name_features = ""
         for rule in self.rules:
-            temp_score, temp_name_features = rule["check"](X)
+            temp_score, temp_name_features = rule["check"](X.iloc[0, :])
             total_score += temp_score
             name_features += temp_name_features
         total_score_normalized = self._normalize_score(total_score, threshold=1)
