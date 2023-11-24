@@ -112,7 +112,8 @@ async def send_spam_alert(bot: Bot, message: types.Message, label: int, reasons:
         else:
             await bot.send_message(chat_id=target_id, text=spam_message)
 
-    await send_message_or_photo(target_id=GROUP_CHAT_ID)
+    if label == 1:
+        await send_message_or_photo(target_id=GROUP_CHAT_ID)
 
     for admin_id in ADMIN_IDS:
         await send_message_or_photo(target_id=admin_id)
