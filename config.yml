@@ -19,3 +19,4 @@ dangerous_words: data/rules_base_model/dangerous_words.csv
 spam_words: data/rules_base_model/spam_words.csv
 path_not_spam_id: data/rules_base_model/not_spam_id.csv
 words_fuzzy_not_enough: data/rules_base_model/words_fuzzy_not_enough.csv
+whitelist_users: data/rules_base_model/whitelist_users.txt

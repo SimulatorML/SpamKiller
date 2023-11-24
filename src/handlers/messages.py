@@ -2,6 +2,7 @@ from aiogram import types
 from functools import partial
 from loguru import logger
 from config import (
+    THRESHOLD_RULE_BASED,
     ADMIN_IDS, 
     TARGET_GROUP_ID, 
     AUTHORIZED_USER_IDS, 
@@ -10,7 +11,7 @@ from config import (
     TARGET_NOT_SPAM_ID,
     WHITELIST_ADMINS
 )
-from src.app.loader import bot, dp, classifier
+from src.app.loader import bot, dp, gpt_classifier, rule_based_classifier
 from src.utils.send_messages import handle_msg_with_args
 from src.utils.add_new_user_id import add_new_member
 
@@ -34,7 +35,9 @@ def handle_msg_partial():
     return partial(
         handle_msg_with_args,
         bot=bot,
-        classifier=classifier,
+        gpt_classifier=gpt_classifier,
+        rule_based_classifier=rule_based_classifier,
+        THRESHOLD_RULE_BASED=THRESHOLD_RULE_BASED,
         ADMIN_IDS=ADMIN_IDS,
         GROUP_CHAT_ID=TARGET_GROUP_ID,
         AUTHORIZED_USER_IDS=AUTHORIZED_USER_IDS,
