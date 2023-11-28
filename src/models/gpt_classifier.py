@@ -24,11 +24,6 @@ class GptSpamClassifier:
         http_client = httpx.AsyncClient(proxies=proxy) if proxy else None 
         self.client = openai.AsyncOpenAI(api_key=api_key, http_client=http_client)
 
-        with open("./prompts.yml", "r") as f:
-            prompts = yaml.safe_load(f)
-        
-        self.prompt = prompts["spam_classification_prompt"]
-
         logger.info("Initialized GptClassifier")
 
     async def predict(self, X: pd.DataFrame) -> List[dict]:
@@ -104,8 +99,12 @@ class GptSpamClassifier:
         
     def _create_prompt(self, message: str, bio: str = None) -> str:
         """Create a prompt for the GPT model to classify the message."""
-        prompt = self.prompt.format(message_text=message)
-        # logger.debug(f"Created prompt: {prompt}")
+        with open("./prompts.yml", "r") as f:
+            prompts = yaml.safe_load(f)
+        
+        prompt_body = prompts["spam_classification_prompt"]
+        prompt = prompt_body.format(message_text=message)
+
         return prompt
     
     async def _api_call(self, prompt: str):
