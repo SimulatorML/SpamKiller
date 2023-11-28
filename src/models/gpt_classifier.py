@@ -104,7 +104,7 @@ class GptSpamClassifier:
         
     def _create_prompt(self, message: str, bio: str = None) -> str:
         """Create a prompt for the GPT model to classify the message."""
-        prompt = self.prompt.format(message_text=message, profile_bio=bio)
+        prompt = self.prompt.format(message_text=message)
         # logger.debug(f"Created prompt: {prompt}")
         return prompt
     

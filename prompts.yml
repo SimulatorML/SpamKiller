@@ -9,19 +9,16 @@ spam_classification_prompt: |
   - Spam: Unsolicited ads or job offers, phishing links or Telegram-links, unusual characters, symbols and mixed character sets, scams, adult content, religious content, messages encouraging private communication..
   - Not Spam: Relevant discussions, code sharing, variety of questions and bug reports(including those about Karpov.Courses), help requests, providing assistance, links from recognized and reputable sources. Messages related to Karpov.Courses (e.g., course enrollment, link requests, course content questions) and 'karpov' related links or mentions (e.g., 'https://karpov.courses', 'https://lab.karpov.courses', '@karpov_anatoly') are always considered relevant and <not-spam>.
   - Language: Messages can be in Russian or English and may contain profanity.
-  - Keep in mind that we encourage open discussions and also some messages might be out of context.
+  - Keep in mind that we encourage open discussions about different topics (e.g. techonology, economics) and also some messages might be out of context.
 
-  2. Profile Bio:
-  - Spam Indicators: Promotional content, suspicious links, adult material.
-  - Legitimate Bios: Include personal Telegram-channel links, IT job mentions, or neutral (empty bio).
 
   Detection Procedure:
   For Spam: Provide 1-3 brief reasons (3-9 words each) starting with "Reasons:\n".
   For Uncertain Cases: Classify as "<not-spam>".
+  Double check to make sure your answer is correct
 
   Input Data:
   - Message: """{message_text}"""
-  - Bio: """{profile_bio}"""
 
   Output Format:
   - <spam> or <not-spam>

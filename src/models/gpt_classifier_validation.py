@@ -125,7 +125,7 @@ class GptSpamClassifierValidation:
         
     def _create_prompt(self, message: str, bio: str = None) -> str:
         """Create a prompt for the GPT model to classify the message."""
-        prompt = self.prompt.format(message_text=message, profile_bio=bio)
+        prompt = self.prompt.format(message_text=message)
         return prompt
     
     async def _api_call(self, prompt: str):
