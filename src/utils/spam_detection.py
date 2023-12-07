@@ -37,7 +37,7 @@ async def handle_msg_with_args(
     Returns
     -------
     """
-    logger.info(f"Got new message from a user {message.from_id}. Checking for spam...")
+    logger.info(f"Got new message from a user {message.from_id} in {message.chat.id} ({message.chat.username}). Checking for spam...")
 
     # Getting features
     photo = message.photo[-1].file_id if message.photo else None
@@ -45,6 +45,7 @@ async def handle_msg_with_args(
     user_info = await bot.get_chat(message.from_user.id)
     user_description = user_info.bio or ""
     reply_to_message_id = message.reply_to_message.message_id if message.reply_to_message else None
+    channel = message.chat.username
 
     spoiler_link, hidden_link = extract_entities(message=message)
 
@@ -59,9 +60,11 @@ async def handle_msg_with_args(
     logger.debug(f"Spoiler_link: {spoiler_link}")
     logger.debug(f"hidden_link: {hidden_link}")
     logger.debug(f"Contains photo: {True if photo else False}")
+    logger.debug(f"Channel: {channel}")
+
 
     # Building DataFrame
-    X = build_data_frame(text=text, bio=user_description, from_id=message.from_id, photo=photo, reply_to_message_id=reply_to_message_id)
+    X = build_data_frame(text=text, bio=user_description, from_id=message.from_id, photo=photo, reply_to_message_id=reply_to_message_id, channel=channel)
     print(X)
 
     # Getting administrators of the channel
@@ -69,12 +72,13 @@ async def handle_msg_with_args(
     admins = [admin.user.id for admin in channel_admins_info]
 
     # Classifying message
-    label, reasons, model_name, score, time_spent = await classify_message(X=X, gpt_classifier=gpt_classifier, 
-                                                                          rule_based_classifier=rule_based_classifier, 
-                                                                          THRESHOLD_RULE_BASED=THRESHOLD_RULE_BASED,
-                                                                          admins=admins,
-                                                                          WHITELIST_ADMINS=WHITELIST_ADMINS,
-                                                                          WHITELIST_USERS=WHITELIST_USERS)
+    label, reasons, model_name, score, time_spent, prompt_name = \
+        await classify_message(X=X, gpt_classifier=gpt_classifier, 
+                              rule_based_classifier=rule_based_classifier, 
+                              THRESHOLD_RULE_BASED=THRESHOLD_RULE_BASED,
+                              admins=admins,
+                              WHITELIST_ADMINS=WHITELIST_ADMINS,
+                              WHITELIST_USERS=WHITELIST_USERS)
 
     if (label == 0) and (message.from_id not in WHITELIST_USERS) and model_name in ["GptSpamClassifier", "RuleBasedClassifier"]:
         # If the message is predicted as not-spam and the user is not in WHITELIST_USERS, user_id will be added to whitelist users
@@ -83,7 +87,7 @@ async def handle_msg_with_args(
 
     logger.info(f"Label: {'Spam' if label == 1 else 'Not-Spam'}")
 
-    await send_spam_alert(bot=bot, message=message, label=label, reasons=reasons, text=text,
+    await send_spam_alert(bot=bot, message=message, label=label, reasons=reasons, text=text, prompt_name=prompt_name,
                           model_name=model_name, score=score, time_spent=time_spent, photo=photo, user_description=user_description,
                           GROUP_CHAT_ID=GROUP_CHAT_ID, ADMIN_IDS=ADMIN_IDS, TARGET_SPAM_ID=TARGET_SPAM_ID, TARGET_NOT_SPAM_ID=TARGET_NOT_SPAM_ID)
     
