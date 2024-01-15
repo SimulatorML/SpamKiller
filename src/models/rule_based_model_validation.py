@@ -22,6 +22,7 @@ class RuleBasedClassifierValidation:
             self.path_dangerous_words = config["dangerous_words"]
             self.path_spam_words = config["spam_words"]
             self.path_words_fuzzy_not_enough = config["words_fuzzy_not_enough"]
+            self.path_whitelist_urls = config["whitelist_urls"]
 
         self.stop_words = pd.read_csv(self.path_stop_words, sep=";")[
             "stop_words"
@@ -36,6 +37,9 @@ class RuleBasedClassifierValidation:
             self.path_words_fuzzy_not_enough, sep=";"
         )["words_fuzzy_not_enough"].tolist()
         self.not_spam_id = []
+        self.whitelist_urls = pd.read_csv(self.path_whitelist_urls, sep=";")[
+            "whitelist_urls"
+        ].tolist()
 
         self.rules = [
             {"name": "contains_telegram_link", "check": self._check_contains_telegram_link},
@@ -62,6 +66,7 @@ class RuleBasedClassifierValidation:
                 "check": self._check_capital_letters,
             },
             {"name": "contains_emoji", "check": self._contains_emoji},
+            {"name": "contains_url", "check": self._check_contains_url},
         ]
 
         logger.info("Initialized RuleBasedClassifierValidation")
@@ -424,5 +429,26 @@ class RuleBasedClassifierValidation:
         if found_emojis:
             score += 0.15 * len(found_emojis)
             feature += f"[+{round(score, 2)}] - Содержатся подозрительные эмодзи ({', '.join(found_emojis[:3])})\n"
+
+        return score, feature
+
+    def _check_contains_url(self, message):
+        text = message["text"].strip()
+        score = 0.0
+        feature = ""
+        url_pattern = re.compile(r"https?://(?:www\.)?[\w.-]+\.\w{2,}(?:/\S*)?")
+
+        links = url_pattern.findall(text)
+        whitelisted_links = list(set(links) & set(self.whitelist_urls))
+
+        if not links or whitelisted_links:
+            return score, feature
+
+        if text.strip() == links[0]:
+            score += 0.3
+            feature = "[+0.3] - В сообщении содержится только ссылка\n"
+        else:
+            score += 0.3
+            feature = "[+0.3] - В сообщении содержится несколько ссылок\n"
 
         return score, feature
