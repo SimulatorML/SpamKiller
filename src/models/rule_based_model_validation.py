@@ -433,20 +433,47 @@ class RuleBasedClassifierValidation:
         return score, feature
 
     def _check_contains_url(self, message):
+        """
+        Calculates the score for a given message based on the presence
+        of various types of URLs in text except whitelisted in whitelist_urls.csv
+
+        Parameters:
+            message (dict): The input message containing the text.
+
+        Returns:
+            float: The calculated score.
+
+        """
         text = message["text"].strip()
         score = 0.0
         feature = ""
-        url_pattern = re.compile(r"https?://(?:www\.)?[\w.-]+\.\w{2,}(?:/\S*)?")
+        # Regular expression pattern for finding various types of URLs in text
+        url_regex = re.compile(
+            r'(?:(?:http|ftp)s?://)?'  # Scheme (optional)
+            r'(?:'  # Start of group for domain/IP
+            r'(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # Domain
+            r'localhost|'  # localhost
+            r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}'  # IPv4 address
+            r')'  # End of group for domain/IP
+            r'(?::\d+)?'  # Optional port
+            r'(?:/?|[/?]\S*)',  # Path (optional)
+            re.IGNORECASE)
 
-        links = url_pattern.findall(text)
-        whitelisted_links = list(set(links) & set(self.whitelist_urls))
+        raw_links = url_regex.findall(text)
+        raw_links = [link.rstrip('/') for link in raw_links]
+        unwanted_links = list(set(raw_links) - set(self.whitelist_urls))
 
-        if not links or whitelisted_links:
+        if not unwanted_links:
             return score, feature
 
-        if text.strip() == links[0]:
+        if text.strip() == unwanted_links[0]:
             score += 0.3
             feature = "[+0.3] - В сообщении содержится только ссылка\n"
+
+        elif len(unwanted_links) == 1:
+            score += 0.15
+            feature = "[+0.15] - В сообщении содержится ссылка и текст\n"
+
         else:
             score += 0.3
             feature = "[+0.3] - В сообщении содержится несколько ссылок\n"
