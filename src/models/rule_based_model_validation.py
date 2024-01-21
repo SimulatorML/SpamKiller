@@ -22,6 +22,7 @@ class RuleBasedClassifierValidation:
             self.path_dangerous_words = config["dangerous_words"]
             self.path_spam_words = config["spam_words"]
             self.path_words_fuzzy_not_enough = config["words_fuzzy_not_enough"]
+            self.path_whitelist_urls = config["whitelist_urls"]
 
         self.stop_words = pd.read_csv(self.path_stop_words, sep=";")[
             "stop_words"
@@ -36,6 +37,9 @@ class RuleBasedClassifierValidation:
             self.path_words_fuzzy_not_enough, sep=";"
         )["words_fuzzy_not_enough"].tolist()
         self.not_spam_id = []
+        self.whitelist_urls = pd.read_csv(self.path_whitelist_urls, sep=";")[
+            "whitelist_urls"
+        ].tolist()
 
         self.rules = [
             {"name": "contains_telegram_link", "check": self._check_contains_telegram_link},
@@ -62,6 +66,7 @@ class RuleBasedClassifierValidation:
                 "check": self._check_capital_letters,
             },
             {"name": "contains_emoji", "check": self._contains_emoji},
+            {"name": "contains_url", "check": self._check_contains_url},
         ]
 
         logger.info("Initialized RuleBasedClassifierValidation")
@@ -424,5 +429,53 @@ class RuleBasedClassifierValidation:
         if found_emojis:
             score += 0.15 * len(found_emojis)
             feature += f"[+{round(score, 2)}] - Содержатся подозрительные эмодзи ({', '.join(found_emojis[:3])})\n"
+
+        return score, feature
+
+    def _check_contains_url(self, message):
+        """
+        Calculates the score for a given message based on the presence
+        of various types of URLs in text except whitelisted in whitelist_urls.csv
+
+        Parameters:
+            message (dict): The input message containing the text.
+
+        Returns:
+            float: The calculated score.
+
+        """
+        text = message["text"].strip()
+        score = 0.0
+        feature = ""
+        # Regular expression pattern for finding various types of URLs in text
+        url_regex = re.compile(
+            r'(?:(?:http|ftp)s?://)?'  # Scheme (optional)
+            r'(?:'  # Start of group for domain/IP
+            r'(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # Domain
+            r'localhost|'  # localhost
+            r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}'  # IPv4 address
+            r')'  # End of group for domain/IP
+            r'(?::\d+)?'  # Optional port
+            r'(?:/?|[/?]\S*)',  # Path (optional)
+            re.IGNORECASE)
+
+        raw_links = url_regex.findall(text)
+        raw_links = [link.rstrip('/') for link in raw_links]
+        unwanted_links = list(set(raw_links) - set(self.whitelist_urls))
+
+        if not unwanted_links:
+            return score, feature
+
+        if text.strip() == unwanted_links[0]:
+            score += 0.3
+            feature = "[+0.3] - В сообщении содержится только ссылка\n"
+
+        elif len(unwanted_links) == 1:
+            score += 0.15
+            feature = "[+0.15] - В сообщении содержится ссылка и текст\n"
+
+        else:
+            score += 0.3
+            feature = "[+0.3] - В сообщении содержится несколько ссылок\n"
 
         return score, feature
