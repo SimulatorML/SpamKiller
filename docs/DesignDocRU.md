@@ -323,7 +323,7 @@ https://www.geeksforgeeks.org/precision-recall-curve-ml/
 
 На момент времени 01.10.23 было сделано:
 
-- Бот работает в чатах [Karpov.courses/Время](http://Karpov.courses/Время) Валеры/BOGDANISSIMO/Dimension. Более 35, 000 пользователей
+- Бот работает в чатах [Karpov.courses](http://Karpov.courses)/Время Валеры/BOGDANISSIMO/Dimension. Более 35, 000 пользователей
 - Очистка .json файла с историей сообщений из чата КК и образцов спама, и упаковка в причесанные датафреймы.
 - Настроен мониторинг: верификация экспертов, деления сообщений на Spam/not SPAM
 - Модель на правилах.
