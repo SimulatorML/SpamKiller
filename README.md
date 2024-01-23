@@ -51,23 +51,24 @@ bash run_spamkiller.sh
 # Project structure
 The following structure is used in this project:
 
-1. `data/`: not available on github (dvc pull to get access)
+1. `docs/`: contains project documentation
+2. `data/`: not available on github (dvc pull to get access)
 
-2. `logs/`: contains project logs,
+3. `logs/`: contains project logs,
     - `logs_from_bot.log` - the main log file in which all the actions of the bot are recorded (not available in the public version);
     - `temp_list_with_new_user.json` is a temporary file to which the user is added until he sends his first message to the chat
 
-3. `static/`: contains script to launch the Bot
+4. `static/`: contains script to launch the Bot
     - `run_bot.py ` - the main file in which the bot is launched
 
-4. `scripts/`: contains scripts for working with data,
+5. `scripts/`: contains scripts for working with data,
     - `data.py` - performs data cleaning
     - `make_metrics.py` - calculates the quality metrics of the model
     - `not_spam_id.py` - generate a CSV file with the not spam IDs
     - `predict_spam_scores.py` - makes predictions from the model
     - `watching.py` - in development
 
-5. `src/`: contains the source code of the service
+6. `src/`: contains the source code of the service
     - `app/`:
         * `bot.py`: source code for the Bot
         * `loader.py`: source code for initializating models, Bot, Dispatcher
