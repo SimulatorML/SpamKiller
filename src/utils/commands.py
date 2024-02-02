@@ -2,6 +2,7 @@ import yaml
 from aiogram import types
 from typing import List
 from loguru import logger
+from src.app.loader import message_scrapper
 
 
 def add_admin_id_to_env(new_id: str, lines: List[str]):
@@ -72,3 +73,34 @@ def add_user_to_whitelist(user_id: int):
         file.write('\n' + str(user_id))
     
     logger.info(f'User {user_id} was successfully added to whitelist_users.txt')
+
+async def update_whitelist_users(message: types.Message, ADMIN_IDS):
+    # Check if message sender is an admin
+    if str(message.from_user.id) not in ADMIN_IDS:
+        await message.answer("Access denied")
+        return
+
+    await message.answer('Scrapping...')
+    channel = f'@{message.get_args().strip()}'
+    parsed_ids = await message_scrapper.start(channel)
+    parsed_ids = set(uid for uid in parsed_ids if uid is not None)
+
+    # Read existing user IDs from the file
+    try:
+        with open("./config.yml", "r") as f:
+            config = yaml.safe_load(f)
+            path_whitelist_users = config["whitelist_users"]
+        with open(path_whitelist_users, 'r') as file:
+            existing_user_ids = set(file.read().splitlines())
+            logger.info(len(existing_user_ids))
+    except FileNotFoundError as e:
+        logger.info(f'File {path_whitelist_users} not found')
+
+    # Filter out user IDs that are already in the file
+    new_user_ids = parsed_ids - existing_user_ids
+    with open(path_whitelist_users, 'a') as file:
+        for user_id in new_user_ids:
+            file.write('\n' + str(user_id))
+
+    logger.info(f'Whiltelist from {channel} updated, added {len(new_user_ids)} users')
+    await message.answer(f'Whiltelist from {channel} updated, added {len(new_user_ids)} users')
