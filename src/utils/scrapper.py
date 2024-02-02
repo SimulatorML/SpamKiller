@@ -24,7 +24,7 @@ class Scrapper:
         # Accessing the channel
         async for message in self.client.iter_messages(channel, limit=self.N):
             try:
-                user_id = message.sender_id
+                user_id = str(message.sender_id)
                 if user_id in user_message_count:
                     user_message_count[user_id] += 1
                 else:
