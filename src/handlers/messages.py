@@ -3,18 +3,17 @@ from functools import partial
 from loguru import logger
 from config import (
     THRESHOLD_RULE_BASED,
-    ADMIN_IDS, 
-    TARGET_GROUP_ID, 
-    AUTHORIZED_USER_IDS, 
-    AUTHORIZED_GROUP_IDS, 
+    ADMIN_IDS,
+    TARGET_GROUP_ID,
+    AUTHORIZED_USER_IDS,
+    AUTHORIZED_GROUP_IDS,
     TARGET_SPAM_ID,
     TARGET_NOT_SPAM_ID,
-    WHITELIST_ADMINS
+    WHITELIST_ADMINS,
 )
 from src.app.loader import bot, dp, gpt_classifier, rule_based_classifier
 from src.utils.spam_detection import handle_msg_with_args
 from src.utils.add_new_user_id import add_new_member
-
 
 
 def handle_msg_partial():
@@ -52,9 +51,7 @@ def handle_msg_partial():
 logger.info("Register handlers")
 dp.message_handler(
     content_types=["any"],
-)(
-    handle_msg_partial()
-)  # Registering a message handler
+)(handle_msg_partial())  # Registering a message handler
 
 
 # Processing new chat users

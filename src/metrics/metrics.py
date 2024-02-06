@@ -147,7 +147,7 @@ class RecallAtSpecificity(Metrics):
             max_recall = recall[index]
             threshold_proba = thresholds[index]
 
-        except:
+        except Exception:
             max_recall = 0.0
             threshold_proba = 0.0
 
@@ -419,7 +419,7 @@ def calculate_FPR(y_true, y_pred):
     """
     Calculate the False Positive Rate (FPR).
 
-    The False Positive Rate is defined as the proportion of negative instances that are incorrectly classified as positive. 
+    The False Positive Rate is defined as the proportion of negative instances that are incorrectly classified as positive.
     This function uses a confusion matrix to calculate FPR.
 
     Parameters
@@ -455,7 +455,7 @@ def calculate_FNR(y_true, y_pred):
     """
     Calculate the False Negative Rate (FNR).
 
-    The False Negative Rate is defined as the proportion of positive instances that are incorrectly classified as negative. 
+    The False Negative Rate is defined as the proportion of positive instances that are incorrectly classified as negative.
     This function uses a confusion matrix to calculate FNR.
 
     Parameters

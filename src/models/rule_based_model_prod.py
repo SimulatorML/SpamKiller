@@ -44,14 +44,20 @@ class RuleBasedClassifier:
         ].tolist()
 
         self.rules = [
-            {"name": "contains_telegram_link", "check": self._check_contains_telegram_link},
+            {
+                "name": "contains_telegram_link",
+                "check": self._check_contains_telegram_link,
+            },
             {"name": "contains_stop_word", "check": self._check_contains_stop_word},
             {
                 "name": "contains_dangerous_words",
                 "check": self._check_contains_dangerous_words,
             },
             {"name": "contains_spam_words", "check": self._check_contains_spam_words},
-            {"name": "contains_cyrillic_spoofing", "check": self._check_contains_cyrillic_spoofing},
+            {
+                "name": "contains_cyrillic_spoofing",
+                "check": self._check_contains_cyrillic_spoofing,
+            },
             {"name": "contains_photo", "check": self._check_contains_photo},
             {"name": "contains_not_spam_id", "check": self._check_not_spam_id},
             {
@@ -112,7 +118,7 @@ class RuleBasedClassifier:
             normalized_score = 0
         else:
             normalized_score = score / threshold
-        
+
         return normalized_score
 
     def _check_contains_telegram_link(self, message):
@@ -120,13 +126,13 @@ class RuleBasedClassifier:
         score = 0.0
         feature = ""
         link_pattern = re.compile(
-            r"https?:\/\/(?:t\.me|telegra\.ph)\/[^\s]+|"  # обычные http и https ссылки 
+            r"https?:\/\/(?:t\.me|telegra\.ph)\/[^\s]+|"  # обычные http и https ссылки
             r"@[\w\d_]+|"  # @username формат
             r"t\.me/\S+|"  # t.me ссылки
             r"t\.me/joinchat/\S+|"  # t.me ссылки на группы
             r"telegra\.ph/\S+"  # telegraph ссылки
         )
-        
+
         links = link_pattern.findall(text)
 
         if not links:
@@ -141,7 +147,7 @@ class RuleBasedClassifier:
         else:
             score += 0.15
             feature = "[+0.15] - В сообщении содержится telegram ссылка\n"
-        
+
         return score, feature
 
     def _check_contains_stop_word(self, message):
@@ -154,14 +160,14 @@ class RuleBasedClassifier:
         Returns:
             float: The score representing the presence of stop words in the message.
         """
-        text = (message["text"] + '    ' + message.get("bio", "")).strip()
+        text = (message["text"] + "    " + message.get("bio", "")).strip()
         score = 0.0
         feature = ""
         for words in self.stop_words:
             if fuzz.token_set_ratio(words.lower(), text.lower()) >= 77:
                 score += 0.30
                 feature += f'[+0.3] - В сообщении содержится: "{words}"\n'
-        
+
         return score, feature
 
     def _check_contains_dangerous_words(self, message):
@@ -174,14 +180,14 @@ class RuleBasedClassifier:
         Returns:
             float: The score calculated based on the number of dangerous words found.
         """
-        text = (message["text"] + '    ' + message.get("bio", "")).strip()
+        text = (message["text"] + "    " + message.get("bio", "")).strip()
         score = 0.0
         feature = ""
         for words in self.dangerous_words:
             if fuzz.token_set_ratio(words.lower(), text.lower()) >= 77:
                 score += 0.15
                 feature += f'[+0.15] - В сообщении содержится: "{words}"\n'
-        
+
         return score, feature
 
     def _check_contains_spam_words(self, message):
@@ -194,19 +200,19 @@ class RuleBasedClassifier:
         Returns:
             float: The score, which is incremented by 1.0 if the phrase is found.
         """
-        text = (message["text"] + '    ' + message.get("bio", "")).strip()
+        text = (message["text"] + "    " + message.get("bio", "")).strip()
         score = 0.0
         feature = ""
         for words in self.spam_words:
             if fuzz.token_set_ratio(words.lower(), text.lower()) >= 90:
                 score += 0.5
                 feature += f'[+0.5] - В сообщении содержится: "{words}"\n'
-        
+
         return score, feature
-    
+
     def _check_contains_cyrillic_spoofing(self, message):
         """
-        Checks if the given message contains Cyrillic Spoofing - substituting Cyrillic letters with 
+        Checks if the given message contains Cyrillic Spoofing - substituting Cyrillic letters with
         similar-looking Latin ones to evade spam filters, e.g., replacing "и" with "i" in Russian words
 
         Parameters:
@@ -215,17 +221,16 @@ class RuleBasedClassifier:
         Returns:
             float: The score based on whether the message contains a photo.
         """
-        text = (message["text"] + '    ' + message.get("bio", "")).strip()
+        text = (message["text"] + "    " + message.get("bio", "")).strip()
         score = 0.0
         feature = ""
 
         patterns = [
-            r'(?:[а-яА-Я]+[a-zA-Z]+[а-яА-Я]+)',  # Слово начинается с рус буквы, потом англ, потом опять рус
-            r'(?:[a-zA-Z]+[а-яА-Я]+[a-zA-Z]+)' # Cлово начинается с англ буквы, потом рус, потом опять англ
-        ] # Не находит случаи, когда сначала идут рус буквы, а потом англ и наоборот, поскольку пользователь мог описаться
+            r"(?:[а-яА-Я]+[a-zA-Z]+[а-яА-Я]+)",  # Слово начинается с рус буквы, потом англ, потом опять рус
+            r"(?:[a-zA-Z]+[а-яА-Я]+[a-zA-Z]+)",  # Cлово начинается с англ буквы, потом рус, потом опять англ
+        ]  # Не находит случаи, когда сначала идут рус буквы, а потом англ и наоборот, поскольку пользователь мог описаться
 
-        pattern = re.compile('|'.join(patterns))
-        result = re.findall(pattern, text)
+        pattern = re.compile("|".join(patterns))
 
         spoofed_words = []
         for word in text.split():
@@ -239,7 +244,7 @@ class RuleBasedClassifier:
             feature = ""
         else:
             feature = f'[+{round(score, 1)}] - Подмена кириллицы ({", ".join(spoofed_words[:3])})\n'
-        
+
         return score, feature
 
     def _check_contains_photo(self, message):
@@ -257,7 +262,7 @@ class RuleBasedClassifier:
         if message["photo"]:
             score += 0.15
             feature = "[+0.15] - В сообщении содержится фотография\n"
-        
+
         return score, feature
 
     def _check_not_spam_id(self, message):
@@ -275,7 +280,7 @@ class RuleBasedClassifier:
         if message["from_id"] in self.not_spam_id:
             score -= 0.5
             feature = "[-0.5] - Пользователь ранее не писал спам\n"
-        
+
         return score, feature
 
     def _check_special_characters(self, message):
@@ -288,7 +293,7 @@ class RuleBasedClassifier:
         Returns:
             float: The calculated score based on the presence of special characters.
         """
-        text = (message["text"] + '    ' + message.get("bio", "")).strip()
+        text = (message["text"] + "    " + message.get("bio", "")).strip()
         score = 0.0
         feature = ""
         pattern = r"[^a-zA-Zа-яА-ЯёЁ0-9.,…!?;:()[\]{}@+=*\/%<>^«»&|`\-⁃–—'\"”“‘’©#№$€_~ \t\n\r∞≈≤≥±∓√∛∜∫∑∏∂∇×÷⇒⇐⇔\\^_&∧∨¬⊕⊖⊗⊘∈∉∪∩⊆⊇⊂⊃ℕℤℚℝℂ→↦^\U00000000-\U0010ffff]"
@@ -296,7 +301,7 @@ class RuleBasedClassifier:
         if result:
             score += len(result) * 0.1
             feature = f'[+{round(len(result) * 0.1, 1)}] - Неразрешенные символы ({", ".join(result[:3])})\n'
-        
+
         return score, feature
 
     def _check_len_message(self, message):
@@ -314,7 +319,7 @@ class RuleBasedClassifier:
         if len(message["text"]) < 5 and len(message["text"]) != 0:
             score += 0.1
             feature = "[+0.1] - Сообщение чересчур короткое\n"
-        
+
         return score, feature
 
     def _check_words_fuzzy_not_enough(self, message):
@@ -327,14 +332,16 @@ class RuleBasedClassifier:
         Returns:
             float: The calculated score based on the presence of words from 'words_fuzzy_not_enough' list in the message text.
         """
-        text = (message["text"] + '    ' + message.get("bio", "")).strip()
+        text = (message["text"] + "    " + message.get("bio", "")).strip()
         score = 0.0
         feature = ""
         for word_fuzzy_not_enough in self.words_fuzzy_not_enough:
             for word in text.split():
-                if word_fuzzy_not_enough == re.sub(r"[^a-zа-я]", "", word.lower().strip()):
+                if word_fuzzy_not_enough == re.sub(
+                    r"[^a-zа-я]", "", word.lower().strip()
+                ):
                     score += 0.15
-        
+
         return score, feature
 
     def _check_capital_letters(self, message):
@@ -366,29 +373,29 @@ class RuleBasedClassifier:
         return score, feature
 
     def _contains_emoji(self, message):
-        text = (message["text"] + '    ' + message.get("bio", "")).strip()
+        text = (message["text"] + "    " + message.get("bio", "")).strip()
         score = 0.0
         feature = ""
         # Unicode кодовые точки для эмодзи
         emojis = [
-            "\U00002757", # Red Exclamation Mark
-            "\U00002753", # Question Mark Ornament
-            "\U0001F4A6", # Sweat Droplets
-            "\U0001F4B5", # Dollar Banknote
-            "\U0001F4B0", # Money Bag
-            "\U0001F4A7", # Droplet
-            "\U0001F346", # Eggplant
-            "\U0001F34C", # Banana
-            "\U0001F351", # Peach
-            "\U0001F353", # Strawberry
-            "\U0001F352", # Cherries
-            "\U0001F608", # Smiling Face with Horns
-            "\U00002705", # White Heavy Check Mark
-            "\U0001F381", # Wrapped Present
-            "\U0001F48E", # Gem Stone
-            "\U0001F911", # Money-Mouth Face
-            "\U00002728", # Sparkles 
-            "\U0001F6A8" # Police Cars Revolving Light
+            "\U00002757",  # Red Exclamation Mark
+            "\U00002753",  # Question Mark Ornament
+            "\U0001F4A6",  # Sweat Droplets
+            "\U0001F4B5",  # Dollar Banknote
+            "\U0001F4B0",  # Money Bag
+            "\U0001F4A7",  # Droplet
+            "\U0001F346",  # Eggplant
+            "\U0001F34C",  # Banana
+            "\U0001F351",  # Peach
+            "\U0001F353",  # Strawberry
+            "\U0001F352",  # Cherries
+            "\U0001F608",  # Smiling Face with Horns
+            "\U00002705",  # White Heavy Check Mark
+            "\U0001F381",  # Wrapped Present
+            "\U0001F48E",  # Gem Stone
+            "\U0001F911",  # Money-Mouth Face
+            "\U00002728",  # Sparkles
+            "\U0001F6A8",  # Police Cars Revolving Light
         ]
         emoji_pattern = re.compile("|".join(emojis))
 
@@ -417,18 +424,19 @@ class RuleBasedClassifier:
         feature = ""
         # Regular expression pattern for finding various types of URLs in text
         url_regex = re.compile(
-            r'(?:(?:http|ftp)s?://)?'  # Scheme (optional)
-            r'(?:'  # Start of group for domain/IP
-            r'(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # Domain
-            r'localhost|'  # localhost
-            r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}'  # IPv4 address
-            r')'  # End of group for domain/IP
-            r'(?::\d+)?'  # Optional port
-            r'(?:/?|[/?]\S*)',  # Path (optional)
-            re.IGNORECASE)
+            r"(?:(?:http|ftp)s?://)?"  # Scheme (optional)
+            r"(?:"  # Start of group for domain/IP
+            r"(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|"  # Domain
+            r"localhost|"  # localhost
+            r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"  # IPv4 address
+            r")"  # End of group for domain/IP
+            r"(?::\d+)?"  # Optional port
+            r"(?:/?|[/?]\S*)",  # Path (optional)
+            re.IGNORECASE,
+        )
 
         raw_links = url_regex.findall(text)
-        raw_links = [link.rstrip('/') for link in raw_links]
+        raw_links = [link.rstrip("/") for link in raw_links]
         unwanted_links = list(set(raw_links) - set(self.whitelist_urls))
 
         if not unwanted_links:
