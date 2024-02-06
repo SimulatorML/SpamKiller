@@ -2,7 +2,7 @@ from aiogram import Bot, Dispatcher, types
 from loguru import logger
 from config import BOT_TOKEN
 from src.models import RuleBasedClassifier, GptSpamClassifier
-from utils.scrapper import Scrapper
+from src.utils.scrapper import Scrapper
 
 
 # Add logger to file with level INFO
@@ -13,7 +13,7 @@ gpt_classifier = GptSpamClassifier()
 rule_based_classifier = RuleBasedClassifier()
 
 # Initialize message scrapper
-message_scrapper = Scrapper(N=10000, n=3)
+message_scrapper = Scrapper()
 
 bot = Bot(token=BOT_TOKEN, parse_mode=types.ParseMode.HTML)
 logger.info("Initialized Bot")

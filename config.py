@@ -56,5 +56,9 @@ OPENAI_COMPLETION_OPTIONS = {
     "presence_penalty": 0
 } # Parameters for GPT
 
+# Default parameters for scrapper
+SCRAPPER_DEPTH = 10000
+SCRAPPER_THRESHOLD = 3
+
 API_ID = os.getenv("API_ID")
 API_HASH = os.getenv("API_HASH")
