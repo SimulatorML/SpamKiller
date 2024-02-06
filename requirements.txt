@@ -17,3 +17,5 @@ watchdog==3.0.0
 fuzzywuzzy==0.18.0
 levenshtein==0.21.1
 clearml==1.11.1
+telethon==1.34.0
+tiktoken==0.5.2
