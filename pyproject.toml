@@ -37,6 +37,8 @@ ruff = "^0.1.11"
 
 [tool.ruff]
 exclude = [
+    "src/app/bot.py", # Because of handlers import
+    "src/handlers/commands.py", # Because of unused import (ADMIN_IDS)
     "**/__init__.py",
     ".bzr",
     ".direnv",

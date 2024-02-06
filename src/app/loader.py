@@ -1,6 +1,6 @@
 from aiogram import Bot, Dispatcher, types
 from loguru import logger
-from config import BOT_TOKEN
+from src.config import BOT_TOKEN
 from src.models import RuleBasedClassifier, GptSpamClassifier
 from src.utils.scrapper import Scrapper
 

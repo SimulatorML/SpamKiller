@@ -8,7 +8,7 @@ import httpx
 from loguru import logger
 import openai
 from openai import OpenAIError
-from config import OPENAI_API_KEY, OPENAI_COMPLETION_OPTIONS, PROXY_URL
+from src.config import OPENAI_API_KEY, OPENAI_COMPLETION_OPTIONS, PROXY_URL
 
 
 class GptSpamClassifierValidation:

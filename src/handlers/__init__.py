@@ -1,2 +1,2 @@
-from . import commands
-from . import messages
+from .commands import *
+from .messages import *

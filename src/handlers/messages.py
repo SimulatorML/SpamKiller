@@ -1,7 +1,7 @@
 from aiogram import types
 from functools import partial
 from loguru import logger
-from config import (
+from src.config import (
     THRESHOLD_RULE_BASED,
     ADMIN_IDS,
     TARGET_GROUP_ID,

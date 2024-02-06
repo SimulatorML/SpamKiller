@@ -1,5 +1,6 @@
 from aiogram import types
 from src.app.loader import dp
+from src.config import ADMIN_IDS
 from src.utils.commands import add_admin, delete_admin, update_whitelist_users
 
 

@@ -1,6 +1,6 @@
 from loguru import logger
 from telethon import TelegramClient
-from config import API_ID, API_HASH, SCRAPPER_DEPTH, SCRAPPER_THRESHOLD
+from src.config import API_ID, API_HASH, SCRAPPER_DEPTH, SCRAPPER_THRESHOLD
 
 
 class Scrapper:

@@ -1,6 +1,7 @@
+import src.handlers
 from aiogram import executor
 from loguru import logger
-from config import ADMIN_IDS
+from src.config import ADMIN_IDS
 from src.app.loader import bot, dp
 from src.utils.add_new_user_id import read_temp_list_with_new_user
 

@@ -1,5 +1,5 @@
 from loguru import logger
-from config import WHITELIST_USERS
+from src.config import WHITELIST_USERS
 from src.utils.commands import add_user_to_whitelist
 from src.utils.message_processing import (
     extract_entities,
