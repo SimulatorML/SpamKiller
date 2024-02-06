@@ -19,7 +19,4 @@ app/mirror_bot.py
 /config
 .DS_store
 .history
-/pyproject.toml
-/poetry.toml
-/poetry.lock
 /.venv/
