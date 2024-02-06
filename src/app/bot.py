@@ -25,3 +25,6 @@ class SpamKiller:
         for admin_id in ADMIN_IDS:
             await bot.send_message(admin_id, "Bot stopped")
         await bot.close()
+
+if __name__ == '__main__':
+    SpamKiller().start()
