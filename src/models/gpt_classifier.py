@@ -7,7 +7,7 @@ import httpx
 from loguru import logger
 import openai
 from openai import OpenAIError
-from src.config import OPENAI_API_KEY, OPENAI_COMPLETION_OPTIONS, PROXY_URL
+from src.config import OPENAI_API_KEY, OPENAI_COMPLETION_OPTIONS, PROXY_URL, GPT_VERSION
 
 
 class GptSpamClassifier:
@@ -177,7 +177,7 @@ class GptSpamClassifier:
         """Call the OpenAI API to get a response."""
         logger.info("Sending request to OpenAI API...")
         response = await self.client.chat.completions.create(
-            model="gpt-3.5-turbo-1106",
+            model=GPT_VERSION,
             messages=[{"role": "user", "content": prompt}],
             **self.openai_completion_options,
         )
