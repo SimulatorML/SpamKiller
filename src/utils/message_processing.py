@@ -45,52 +45,56 @@ async def classify_message(
     admins: List[int],
     WHITELIST_ADMINS: List[int],
     WHITELIST_USERS: List[int],
-) -> Tuple[int, str, str, float, float]:
+) -> dict:
     # Get user_id
     text = X.iloc[0, :].text
     user_id = X.iloc[0, :].from_id
     score = 0.0
 
+    msg_features = {"label": None, "reasons": None, "model_name": "None",
+                    "score": 0.0, "time_spent": 0.0, "prompt_name": "None",
+                    "prompt_tokens": 0, 'completion_tokens': 0
+                    }
+
     # Check for special user categories
     if user_id in admins or user_id in WHITELIST_ADMINS:
         # If the user is admin
-        return (
-            0,
-            "Пояснение: Админов нельзя трогать. Они хорошие",
-            "None",
-            0.0,
-            0.0,
-            "None",
-        )
+        msg_features["label"] = 0
+        msg_features["reasons"] = "Пояснение: Админов нельзя трогать. Они хорошие"
+        return msg_features
+
     if user_id in WHITELIST_USERS:
         # If the user is in whitelist users
-        return 0, "Пояснение: Пользователь в белом списке", "None", 0.0, 0.0, "None"
+        msg_features["label"] = 0
+        msg_features["reasons"] = "Пояснение: Пользователь в белом списке"
+        return msg_features
+
     if not text:
         # If the message doesn't contain any text
-        return 0, "Пояснение: нет текста в сообщении", "None", 0.0, 0.0, "None"
+        msg_features["label"] = 0
+        msg_features["reasons"] = "Пояснение: нет текста в сообщении"
+        return msg_features
 
     # Classifying the message
-    model_name = "GptSpamClassifier"
+    msg_features["model_name"] = "GptSpamClassifier"
     response = await gpt_classifier.predict(X)
     response = response[0]
-    (
-        label,
-        reasons,
-        prompt_tokens,
-        completion_tokens,
-        time_spent,
-        prompt_name,
-    ) = response.values()
+    logger.info(response)
+    keys = ['label', 'reasons', 'prompt_tokens', 'completion_tokens', 'time_spent', 'prompt_name']
+    for key, value in zip(keys, response.values()):
+        msg_features[key] = value
 
     # If there was an Error with OpenAI (timeout, unexpected response or different error), rule_based model will be used
-    if label is None:
-        model_name = "RuleBasedClassifier"
-        score, reasons = rule_based_classifier.predict(X)
+    if msg_features['label'] is None:
+        msg_features['model_name'] = "RuleBasedClassifier"
+        msg_features['score'], msg_features['reasons'] = rule_based_classifier.predict(X)
 
-        reasons = "Причины:\n" + reasons
-        label = 1 if score >= THRESHOLD_RULE_BASED else 0
+        msg_features['reasons'] = "Причины:\n" + msg_features['reasons']
+        msg_features['label'] = 1 if score >= THRESHOLD_RULE_BASED else 0
 
-    return label, reasons, model_name, score, time_spent, prompt_name
+    return msg_features
+
+
 
 
 async def send_spam_alert(
@@ -103,6 +107,8 @@ async def send_spam_alert(
     model_name: str,
     score: float,
     time_spent: float,
+    prompt_tokens: int,
+    completion_tokens: int,
     photo,
     user_description: str,
     GROUP_CHAT_ID: int,
@@ -149,6 +155,9 @@ async def send_spam_alert(
         + "\n"
         + reasons
     )
+    if model_name == 'GptSpamClassifier':
+        spam_message += (f"\n\nP_tokens: {prompt_tokens}\n"
+                         + f"C_tokens: {completion_tokens}")
 
     async def send_message_or_photo(target_id, spam_message=spam_message, photo=photo):
         """"""

@@ -84,7 +84,7 @@ async def handle_msg_with_args(
     admins = [admin.user.id for admin in channel_admins_info]
 
     # Classifying message
-    label, reasons, model_name, score, time_spent, prompt_name = await classify_message(
+    msg_features = await classify_message(
         X=X,
         gpt_classifier=gpt_classifier,
         rule_based_classifier=rule_based_classifier,
@@ -95,26 +95,29 @@ async def handle_msg_with_args(
     )
 
     if (
-        (label == 0)
+        (msg_features["label"] == 0)
         and (message.from_id not in WHITELIST_USERS)
-        and model_name in ["GptSpamClassifier", "RuleBasedClassifier"]
+        and msg_features["model_name"] in ["GptSpamClassifier", "RuleBasedClassifier"]
     ):
-        # If the message is predicted as not-spam and the user is not in WHITELIST_USERS, user_id will be added to whitelist users
+        # If the message is predicted as not-spam and the user is not in WHITELIST_USERS,
+        # user_id will be added to whitelist users
         WHITELIST_USERS.append(message.from_id)
         add_user_to_whitelist(user_id=message.from_id)
 
-    logger.info(f"Label: {'Spam' if label == 1 else 'Not-Spam'}")
+    logger.info(f"Label: {'Spam' if msg_features['label'] == 1 else 'Not-Spam'}")
 
     await send_spam_alert(
         bot=bot,
         message=message,
-        label=label,
-        reasons=reasons,
+        label=msg_features["label"],
+        reasons=msg_features["reasons"],
         text=text,
-        prompt_name=prompt_name,
-        model_name=model_name,
-        score=score,
-        time_spent=time_spent,
+        prompt_name=msg_features["prompt_name"],
+        model_name=msg_features["model_name"],
+        score=msg_features["score"],
+        time_spent=msg_features["time_spent"],
+        prompt_tokens=msg_features["prompt_tokens"],
+        completion_tokens=msg_features["completion_tokens"],
         photo=photo,
         user_description=user_description,
         GROUP_CHAT_ID=GROUP_CHAT_ID,
