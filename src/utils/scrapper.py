@@ -26,23 +26,21 @@ class Scrapper:
         user_message_count = {}
         whitelist_users = []
         # Accessing the channel
-        async for message in self.client.iter_messages(channel, limit=depth):
-            try:
+        try:
+            async for message in self.client.iter_messages(channel, limit=depth):
                 user_id = str(message.sender_id)
                 if user_id in user_message_count:
                     user_message_count[user_id] += 1
                 else:
                     user_message_count[user_id] = 1
-            except Exception as e:
-                logger.warning(f"Error scrapping: {e}")
-                continue
-
-        # Add users to whitelist if they sent n or more messages
-        for user_id, messages_count in user_message_count.items():
-            if messages_count >= threshold:
-                whitelist_users.append(user_id)
-
-        logger.info("Successfully scrapped messages")
+            # Add users to whitelist if they sent n or more messages
+            for user_id, messages_count in user_message_count.items():
+                if messages_count >= threshold:
+                    whitelist_users.append(user_id)
+            logger.info("Successfully scrapped messages")
+        except Exception as e:
+            logger.warning(f"Error scrapping: {e}")
+            whitelist_users = None
         return whitelist_users
 
     async def start(self, args: list):

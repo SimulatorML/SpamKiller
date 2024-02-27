@@ -1,4 +1,5 @@
 from aiogram import Bot, Dispatcher, types
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from loguru import logger
 from src.config import BOT_TOKEN
 from src.models import RuleBasedClassifier, GptSpamClassifier
@@ -16,8 +17,10 @@ rule_based_classifier = RuleBasedClassifier()
 message_scrapper = Scrapper()
 
 bot = Bot(token=BOT_TOKEN, parse_mode=types.ParseMode.HTML)
+storage = MemoryStorage()
 logger.info("Initialized Bot")
 
 # Initialize dispatcher for bot.
 # Dispatcher is a class that process all incoming updates and handle them to registered handlers
-dp = Dispatcher(bot)
+dp = Dispatcher(bot, storage=storage)
+

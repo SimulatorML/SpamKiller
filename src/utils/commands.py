@@ -84,11 +84,11 @@ async def update_whitelist_users(message: types.Message, ADMIN_IDS):
         await message.answer("Access denied")
         return
 
-    await message.answer("Scrapping...")
-    command = message.get_args().split(" ")
+    command = message.text.split(" ")
     args = []
     channel = f"@{command[0]}"
     args.append(channel)
+    await message.answer("Updating...")
     if len(command) > 1:
         try:
             try:
@@ -115,27 +115,30 @@ async def update_whitelist_users(message: types.Message, ADMIN_IDS):
             return
 
     parsed_ids = await message_scrapper.start(args)
-    parsed_ids = set(uid for uid in parsed_ids if uid is not None)
+    if parsed_ids:
+        parsed_ids = set(uid for uid in parsed_ids if uid is not None)
+        # Read existing user IDs from the file
+        try:
+            with open("./config.yml", "r") as f:
+                config = yaml.safe_load(f)
+                path_whitelist_users = config["whitelist_users"]
+            with open(path_whitelist_users, "r+") as file:
+                existing_user_ids = set(file.read().splitlines())
+                # Filter out user IDs that are already in the file
+                new_user_ids = parsed_ids - existing_user_ids
+                file.seek(0, 2)  # go to the end of the file
+                for user_id in new_user_ids:
+                    file.write("\n" + str(user_id))
 
-    # Read existing user IDs from the file
-    try:
-        with open("./config.yml", "r") as f:
-            config = yaml.safe_load(f)
-            path_whitelist_users = config["whitelist_users"]
-        with open(path_whitelist_users, "r+") as file:
-            existing_user_ids = set(file.read().splitlines())
-            # Filter out user IDs that are already in the file
-            new_user_ids = parsed_ids - existing_user_ids
-            file.seek(0, 2)  # go to the end of the file
-            for user_id in new_user_ids:
-                file.write("\n" + str(user_id))
-    except FileNotFoundError:
-        logger.info(f"File {path_whitelist_users} not found")
+            result_message = (
+                f"Whitelist from {channel} updated, added {len(new_user_ids)} user(s), "
+                f"total {len(existing_user_ids) + len(new_user_ids)}"
+            )
+        except FileNotFoundError:
+            logger.info(f"File {path_whitelist_users} not found")
+            result_message = f"File {path_whitelist_users} not found"
 
-    result_message = (
-        f"Whiltelist from {channel} updated, added {len(new_user_ids)} user(s), "
-        f"total {len(existing_user_ids) + len(new_user_ids)}"
-    )
-
+    else:
+        result_message = "Failed updating whitelist. See logs for more information"
     logger.info(result_message)
     await message.answer(result_message)
