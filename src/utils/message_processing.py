@@ -76,25 +76,30 @@ async def classify_message(
         return msg_features
 
     # Classifying the message
-    msg_features["model_name"] = "GptSpamClassifier"
+    msg_features['model_name'] = "RuleBasedClassifier"
+    msg_features['score'], msg_features['reasons'] = rule_based_classifier.predict(X)
+
+    msg_features['reasons'] = "Причины:\n" + msg_features['reasons']
+    msg_features['label'] = 1 if msg_features['score'] >= THRESHOLD_RULE_BASED else 0
+
+    if msg_features['label'] == 1:
+        return msg_features
+
+    # The second check using GPT if rule based model is marked as not spam
+    gpt_msg_features = {"label": None, "reasons": None, "model_name": "None",
+                    "score": 0.0, "time_spent": 0.0, "prompt_name": "None",
+                    "prompt_tokens": 0, 'completion_tokens': 0
+                    }
+    gpt_msg_features["model_name"] = "GptSpamClassifier"
     response = await gpt_classifier.predict(X)
     response = response[0]
     logger.info(response)
     keys = ['label', 'reasons', 'prompt_tokens', 'completion_tokens', 'time_spent', 'prompt_name']
     for key, value in zip(keys, response.values()):
-        msg_features[key] = value
+        gpt_msg_features[key] = value
 
-    # If there was an Error with OpenAI (timeout, unexpected response or different error), rule_based model will be used
-    if msg_features['label'] is None:
-        msg_features['model_name'] = "RuleBasedClassifier"
-        msg_features['score'], msg_features['reasons'] = rule_based_classifier.predict(X)
-
-        msg_features['reasons'] = "Причины:\n" + msg_features['reasons']
-        msg_features['label'] = 1 if score >= THRESHOLD_RULE_BASED else 0
-
-    return msg_features
-
-
+    # If there was an Error with OpenAI (timeout, unexpected response or different error), rule_based model predictions will be used
+    return msg_features if gpt_msg_features['label'] is None else gpt_msg_features
 
 
 async def send_spam_alert(
