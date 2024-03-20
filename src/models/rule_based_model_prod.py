@@ -396,6 +396,20 @@ class RuleBasedClassifier:
             "\U0001F911",  # Money-Mouth Face
             "\U00002728",  # Sparkles
             "\U0001F6A8",  # Police Cars Revolving Light
+            "\U000027a1",  # Right Arrow
+            "\U00002B05",  # Left Arrow
+            "\U0001F680",  # Rocket
+            "\U0001F4E9",  # Envelope with Arrow
+            "\U0001F525",  # Fire
+            "\U0001F514",  # Bell
+            "\U0001F60E",  # Smiling Face with Sunglasses
+            "\U0001F5F3",  # Ballot Box with Ballot
+            "\U0001F310",  # Globe with Meridians
+            "\U0001F4B8",  # Money with Wings
+            "\U0001F4B2",  # Heavy Dollar Sign
+            "\U00002935",  # Right Arrow Curving down
+            "\U0001F51E",  # NO ONE UNDER EIGHTEEN SYMBOL
+            "\U0001F50D",  # Left-Pointing Magnifying Glass
         ]
         emoji_pattern = re.compile("|".join(emojis))
 
