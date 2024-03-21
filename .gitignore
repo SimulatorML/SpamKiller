@@ -20,3 +20,8 @@ app/mirror_bot.py
 .DS_store
 .history
 /.venv/
+/bin
+/lib
+/lib64
+/share
+pyvenv.cfg

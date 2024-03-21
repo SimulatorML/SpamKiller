@@ -6,7 +6,7 @@ spam_classification_prompt_karpov_courses: |
   Evaluation Criteria:
 
   1. Message Content:
-  - Spam: Unsolicited ads or job offers, phishing links or Telegram-links (e.g, t.me/link, @link or telegra.ph/link), scams, adult content, religious content, messages encouraging private communication.
+  - Spam: Unsolicited ads or job offers, phishing links or Telegram-links (e.g, t.me/link, @link or telegra.ph/link), scams, adult content, religious content, messages encouraging private communication. Any questions or discussions about VPN.
   - Not Spam: Relevant discussions, code sharing, variety of questions and bug reports(including those about Karpov.Courses), help requests, providing assistance, links from recognized and reputable sources. Messages related to Karpov.Courses (e.g., course enrollment, link requests, course content questions) and 'karpov' related links or mentions (e.g., 'https://karpov.courses', 'https://lab.karpov.courses', '@karpov_anatoly') are always considered relevant and <not-spam>.
   - Language: Messages can be in Russian or English and may contain profanity.
   - Keep in mind that we encourage open discussions about different topics (e.g. techonology, economics) and also some messages might be out of context.
