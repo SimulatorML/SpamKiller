@@ -64,7 +64,6 @@ class RuleBasedClassifier:
                 "name": "contains_special_characters",
                 "check": self._check_special_characters,
             },
-            {"name": "check_len_message", "check": self._check_len_message},
             {
                 "name": "contains_words_fuzzy_not_enough",
                 "check": self._check_words_fuzzy_not_enough,
@@ -93,11 +92,20 @@ class RuleBasedClassifier:
         logger.info("Predicting...")
         total_score = 0.0
         name_features = ""
+        detected_features = set()
         for rule in self.rules:
             temp_score, temp_name_features = rule["check"](X.iloc[0, :])
+            detected_features.add(rule["name"]) if temp_score > 0 else None
             total_score += temp_score
             name_features += temp_name_features
         total_score_normalized = self._normalize_score(total_score, threshold=1)
+        if len(X.iloc[0, :]["text"].split()) < 2 and all(
+            x not in detected_features for x in ["contains_url", 
+                                             "contains_telegram_link",
+                                             "contains_stop_word",
+                                             "contains_spam_word"]):
+            total_score_normalized = 0
+            name_features = "0.0 сообщение слишком короткое\n"
 
         return total_score_normalized, name_features
 
@@ -402,7 +410,6 @@ class RuleBasedClassifier:
             "\U0001F4E9",  # Envelope with Arrow
             "\U0001F525",  # Fire
             "\U0001F514",  # Bell
-            "\U0001F60E",  # Smiling Face with Sunglasses
             "\U0001F5F3",  # Ballot Box with Ballot
             "\U0001F310",  # Globe with Meridians
             "\U0001F4B8",  # Money with Wings
