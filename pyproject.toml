@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "spamkiller"
+name = "app"
 version = "0.1.0"
 description = ""
 authors = ["Sokolov Fedor <sokol_f4@mail.ru>"]
