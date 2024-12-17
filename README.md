@@ -30,8 +30,8 @@ Our goal is to maintain a high-quality user experience, uninterrupted by spam an
 * [DVC](https://dvc.org/doc/install)\
 Install the required Python libraries and download the data:
 ```
-pip install -r requirements.txt
-dvc pull
+make setup
+make pull-data
 ```
 ## Environment Variables
 * Specify the environment variables in `.env` file:
@@ -45,7 +45,7 @@ dvc pull
 ## Bot Starting
 * Start the bot by running bash-script:
 ```
-bash run_spamkiller.sh
+make run
 ```
 
 # Project structure
