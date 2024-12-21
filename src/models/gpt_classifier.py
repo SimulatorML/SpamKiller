@@ -31,16 +31,19 @@ class GptSpamClassifier:
 
     async def predict(self, X: pd.DataFrame) -> List[dict]:
         """
-        Predicts if the message is spam or not.
+        Предсказывает категорию сообщения.
 
         Parameters:
-            X (pandas DataFrame): The input data to predict spam/not-spam for.
+            X (pandas DataFrame): Входные данные для предсказания.
 
         Returns:
-            List[dict]: A list containing dictionaries with label, reasons for the answer,
-                        prompt_tokens, completion_tokens, used prompt and time spent on request.
+            List[dict]: Список словарей, содержащих:
+                - label: 0 (не спам), 1 (возможно спам), 2 (точно спам)
+                - reasons: причины классификации
+                - prompt_tokens: количество токенов в запросе
+                - completion_tokens: количество токенов в ответе
+                - time_spent: время, затраченное на запрос
         """
-        # Validate the input DataFrame to have the required columns
         logger.info("Predicting...")
 
         if not all(column in X for column in ["text", "bio", "from_id"]):
@@ -54,16 +57,15 @@ class GptSpamClassifier:
                     "prompt_tokens": 0,
                     "completion_tokens": 0,
                     "time_spent": 0,
-                    "prompt": None,
                 }
             ]
 
-        # Create a task for each row in the DataFrame
+        # Создаем задачу для каждой строки в DataFrame
         tasks = [self._predict_row(X.iloc[i]) for i in range(len(X))]
 
-        # Run all tasks concurrently
+        # Запускаем все задачи параллельно
         results = await asyncio.gather(*tasks)
-        logger.info("Succesfully predicted")
+        logger.info("Successfully predicted")
 
         return results
 
@@ -185,15 +187,31 @@ class GptSpamClassifier:
 
     @staticmethod
     def _process_response(response: str) -> Tuple[Optional[int], Optional[str]]:
-        """Process the response from OpenAI and extract the label and reasons."""
+        """
+        Обрабатывает ответ от OpenAI и извлекает метку и причины.
+        
+        Возвращает:
+            Tuple[Optional[int], Optional[str]], где:
+            - int: 0 (не спам), 1 (возможно спам), 2 (точно спам)
+            - str: причины классификации
+        """
         lines = response.strip().split("\n")
         if not lines:
             return None, None
 
-        # Determine the label based on the first line
-        label = 1 if "<spam>" in lines[0] else 0 if "<not-spam>" in lines[0] else None
+        # Определяем метку на основе первой строки
+        first_line = lines[0].lower()
+        if "<not-spam>" in first_line:
+            label = 0
+        elif "<likely-spam>" in first_line:
+            label = 1
+        elif "<spam>" in first_line:
+            label = 2
+        else:
+            return None, None
 
-        # Join all lines except the first to form the reasons string; Empty if label == 0
-        reasons = "\n".join(lines[1:]) if label == 1 else ""
+        # Объединяем все строки кроме первой для формирования причин
+        # Пустая строка для not-spam (label == 0)
+        reasons = "\n".join(lines[1:]) if label > 0 else ""
 
         return label, reasons

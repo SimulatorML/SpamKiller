@@ -97,11 +97,11 @@ class RuleBasedClassifier:
             temp_score, temp_name_features = rule["check"](X.iloc[0, :])
             total_score += temp_score
             name_features += temp_name_features
-        total_score_normalized = self._normalize_score(total_score, threshold=1)
+        label = self._normalize_score(total_score, threshold=1)
 
-        return total_score_normalized, name_features
+        return label, name_features
 
-    def _normalize_score(self, score, threshold):
+    def _normalize_score(self, score, threshold = 1):
         """
         Normalize the score to a range from 0 to 1 using a threshold value.
 
@@ -113,13 +113,11 @@ class RuleBasedClassifier:
             float: The normalized score.
         """
         if score >= threshold:
-            normalized_score = 1.0
-        elif score < 0:
-            normalized_score = 0
+            return 2
+        elif 0.3 <= score < threshold:
+            return 1
         else:
-            normalized_score = score / threshold
-
-        return normalized_score
+            return 0
 
     def _check_contains_telegram_link(self, message):
         text = message["text"].strip()
