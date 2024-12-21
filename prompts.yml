@@ -1,3 +1,6 @@
+# новая логика обработки на спам используя чат гпт
+#добавляем логику на трехуровневую классификацию сообщений (раньше оно было просто  0 и 1 от чата GPT)
+
 spam_classification_prompt: |
   You are an advanced language model with expertise in spam detection, responsible for an IT chat, where people can discuss various topics
 
