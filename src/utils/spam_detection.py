@@ -76,8 +76,8 @@ async def handle_msg_with_args(
     if len(user_message_buffer[message.from_id]) == 3:  # Если пользователь отправил 3 сообщения
         if all(label == 0 for label in user_message_buffer[message.from_id]):
             # Если все 3 сообщения не являются спамом
-            if message.from_id not in WHITELIST_USERS:
-                WHITELIST_USERS.append(message.from_id)
+            if message.from_id not in WHITELIST_USERS: #проверяем наличие пользователя в белом списке
+                WHITELIST_USERS.append(message.from_id) #процесс добавления пользователя после 3х чистых сообщений
                 add_user_to_whitelist(user_id=message.from_id)
                 logger.info(f"User {message.from_id} added to whitelist after 3 non-spam messages.")
         # Очистка буфера после обработки 3 сообщений
