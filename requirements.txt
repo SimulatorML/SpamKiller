@@ -19,3 +19,4 @@ levenshtein==0.21.1
 clearml==1.11.1
 telethon==1.34.0
 tiktoken==0.5.2
+emoji==2.14.0
