@@ -86,6 +86,8 @@ async def handle_msg_with_args(
     # Classifying message
     msg_features = await classify_message(
         X=X,
+        bot=bot,
+        message=message,
         gpt_classifier=gpt_classifier,
         rule_based_classifier=rule_based_classifier,
         THRESHOLD_RULE_BASED=THRESHOLD_RULE_BASED,
@@ -93,7 +95,7 @@ async def handle_msg_with_args(
         WHITELIST_ADMINS=WHITELIST_ADMINS,
         WHITELIST_USERS=WHITELIST_USERS,
     )
-
+    ###
     if (
         (msg_features["label"] == 0)
         and (message.from_id not in WHITELIST_USERS)

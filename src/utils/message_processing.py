@@ -3,6 +3,10 @@ from html import escape
 from typing import Tuple, List
 from aiogram import types, Bot
 from loguru import logger
+from src.utils.spam_history_manager import SpamHistoryManager
+
+
+spam_history = SpamHistoryManager()
 
 
 def extract_entities(message: types.Message) -> Tuple[str, str]:
@@ -39,6 +43,8 @@ def build_data_frame(
 
 async def classify_message(
     X: pd.DataFrame,
+    bot: Bot,
+    message: types.Message,
     gpt_classifier,
     rule_based_classifier,
     THRESHOLD_RULE_BASED: float,
@@ -46,15 +52,33 @@ async def classify_message(
     WHITELIST_ADMINS: List[int],
     WHITELIST_USERS: List[int],
 ) -> dict:
-    # Get user_id
+    """
+    Classifies the message and applies the necessary actions.
+
+    Parameters:
+    -----------
+    X : pd.DataFrame
+        DataFrame with the message data
+    bot : Bot
+        Bot instance to perform actions
+    message : types.Message
+        Original message to access chat.id
+    """
+
     text = X.iloc[0, :].text
     user_id = X.iloc[0, :].from_id
     score = 0.0
 
-    msg_features = {"label": None, "reasons": None, "model_name": "None",
-                    "score": 0.0, "time_spent": 0.0, "prompt_name": "None",
-                    "prompt_tokens": 0, 'completion_tokens': 0
-                    }
+    msg_features = {
+        "label": None,
+        "reasons": None,
+        "model_name": "None",
+        "score": 0.0,
+        "time_spent": 0.0,
+        "prompt_name": "None",
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+    }
 
     # Check for special user categories
     if user_id in admins or user_id in WHITELIST_ADMINS:
@@ -80,21 +104,74 @@ async def classify_message(
     response = await gpt_classifier.predict(X)
     response = response[0]
     logger.info(response)
-    keys = ['label', 'reasons', 'prompt_tokens', 'completion_tokens', 'time_spent', 'prompt_name']
-    for key, value in zip(keys, response.values()):
-        msg_features[key] = value
+
+    # if gpt classifier response
+    if response["label"] is not None:
+        score = response.get("score", 0.0)
+
+        # Определение категории спама на основе score
+        if score >= 0.8:
+            spam_category = "definite_spam"
+        elif score >= THRESHOLD_RULE_BASED:
+            spam_category = "likely_spam"
+        else:
+            spam_category = "not_spam"
+
+        # Добавление в историю и получение действия
+        action_data = spam_history.add_message(
+            user_id=X.iloc[0].from_id, spam_category=spam_category, score=score
+        )
+
+        # Применение действий
+        if action_data["action"] == "ban":
+            await bot.ban_chat_member(
+                chat_id=message.chat.id, user_id=X.iloc[0].from_id
+            )
+            logger.info(f"User {X.iloc[0].from_id} banned: {action_data['reason']}")
+
+        msg_features.update(
+            {
+                "label": 1 if spam_category in ["definite_spam", "likely_spam"] else 0,
+                "reasons": response["reasons"],
+                "score": response["score"],
+                "time_spent": response["time_spent"],
+                "prompt_name": response["prompt_name"],
+                "prompt_tokens": response["prompt_tokens"],
+                "completion_tokens": response["completion_tokens"],
+            }
+        )
 
     # If there was an Error with OpenAI (timeout, unexpected response or different error), rule_based model will be used
-    if msg_features['label'] is None:
-        msg_features['model_name'] = "RuleBasedClassifier"
-        msg_features['score'], msg_features['reasons'] = rule_based_classifier.predict(X)
+    if msg_features["label"] is None:
+        msg_features["model_name"] = "RuleBasedClassifier"
+        msg_features["score"], msg_features["reasons"] = rule_based_classifier.predict(X)
 
-        msg_features['reasons'] = "Причины:\n" + msg_features['reasons']
-        msg_features['label'] = 1 if score >= THRESHOLD_RULE_BASED else 0
+        # Определение категории спама на основе score
+        if score >= 0.8:
+            spam_category = "definite_spam"
+        elif score >= THRESHOLD_RULE_BASED:
+            spam_category = "likely_spam"
+        else:
+            spam_category = "not_spam"
+
+        # Добавление в историю и получение действия
+        action_data = spam_history.add_message(
+            user_id=X.iloc[0].from_id, spam_category=spam_category, score=score
+        )
+
+        # Применение действий
+        if action_data["action"] == "ban":
+            await bot.ban_chat_member(
+                chat_id=message.chat.id, user_id=X.iloc[0].from_id
+            )
+            logger.info(f"User {X.iloc[0].from_id} banned: {action_data['reason']}")
+
+        msg_features["label"] = (
+            1 if spam_category in ["definite_spam", "likely_spam"] else 0)
+        msg_features["reasons"] = "Причины:\n" + msg_features["reasons"]
+        msg_features["score"] = score
 
     return msg_features
-
-
 
 
 async def send_spam_alert(
@@ -155,9 +232,10 @@ async def send_spam_alert(
         + "\n"
         + reasons
     )
-    if model_name == 'GptSpamClassifier':
-        spam_message += (f"\n\nP_tokens: {prompt_tokens}\n"
-                         + f"C_tokens: {completion_tokens}")
+    if model_name == "GptSpamClassifier":
+        spam_message += (
+            f"\n\nP_tokens: {prompt_tokens}\n" + f"C_tokens: {completion_tokens}"
+        )
 
     async def send_message_or_photo(target_id, spam_message=spam_message, photo=photo):
         """"""
