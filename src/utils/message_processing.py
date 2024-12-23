@@ -6,7 +6,7 @@ from loguru import logger
 from src.utils.spam_history_manager import SpamHistoryManager
 
 
-spam_history = SpamHistoryManager()
+# spam_history = SpamHistoryManager() #
 
 
 def extract_entities(message: types.Message) -> Tuple[str, str]:
@@ -51,18 +51,40 @@ async def classify_message(
     admins: List[int],
     WHITELIST_ADMINS: List[int],
     WHITELIST_USERS: List[int],
+    spam_history: SpamHistoryManager,
 ) -> dict:
     """
-    Classifies the message and applies the necessary actions.
+    Classifies the given message as spam or not spam using both GPT-based and rule-based classifiers and
+    returns the classification details.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     X : pd.DataFrame
-        DataFrame with the message data
+        DataFrame containing message features such as text, bio, from_id, etc.
     bot : Bot
-        Bot instance to perform actions
+        Instance of the bot to perform actions like banning users.
     message : types.Message
-        Original message to access chat.id
+        The message object from Telegram.
+    gpt_classifier : GptSpamClassifier
+        GPT-based spam classifier.
+    rule_based_classifier : RuleBasedClassifier
+        Rule-based spam classifier.
+    THRESHOLD_RULE_BASED : float
+        Threshold for rule-based classification to consider a message as spam.
+    admins : List[int]
+        List of admin user IDs.
+    WHITELIST_ADMINS : List[int]
+        List of whitelisted admin user IDs.
+    WHITELIST_USERS : List[int]
+        List of whitelisted user IDs.
+    spam_history : SpamHistoryManager
+        Instance to manage spam history and perform actions on users.
+
+    Returns
+    -------
+    dict
+        A dictionary containing classification results: label, reasons, model_name, score, time_spent,
+        prompt_name, prompt_tokens, and completion_tokens.
     """
 
     text = X.iloc[0, :].text
@@ -87,11 +109,17 @@ async def classify_message(
         msg_features["reasons"] = "Пояснение: Админов нельзя трогать. Они хорошие"
         return msg_features
 
-    if user_id in WHITELIST_USERS:
-        # If the user is in whitelist users
+    if spam_history.is_in_whitelist(user_id):
+        WHITELIST_USERS.append(user_id)
         msg_features["label"] = 0
         msg_features["reasons"] = "Пояснение: Пользователь в белом списке"
         return msg_features
+
+    # if user_id in WHITELIST_USERS:
+    #     # If the user is in whitelist users
+    #     msg_features["label"] = 0
+    #     msg_features["reasons"] = "Пояснение: Пользователь в белом списке"
+    #     return msg_features
 
     if not text:
         # If the message doesn't contain any text
@@ -99,7 +127,7 @@ async def classify_message(
         msg_features["reasons"] = "Пояснение: нет текста в сообщении"
         return msg_features
 
-    # Classifying the message
+    # Classifying the message using GPT-based classifier
     msg_features["model_name"] = "GptSpamClassifier"
     response = await gpt_classifier.predict(X)
     response = response[0]
@@ -144,7 +172,9 @@ async def classify_message(
     # If there was an Error with OpenAI (timeout, unexpected response or different error), rule_based model will be used
     if msg_features["label"] is None:
         msg_features["model_name"] = "RuleBasedClassifier"
-        msg_features["score"], msg_features["reasons"] = rule_based_classifier.predict(X)
+        msg_features["score"], msg_features["reasons"] = rule_based_classifier.predict(
+            X
+        )
 
         # Определение категории спама на основе score
         if score >= 0.8:
@@ -167,7 +197,8 @@ async def classify_message(
             logger.info(f"User {X.iloc[0].from_id} banned: {action_data['reason']}")
 
         msg_features["label"] = (
-            1 if spam_category in ["definite_spam", "likely_spam"] else 0)
+            1 if spam_category in ["definite_spam", "likely_spam"] else 0
+        )
         msg_features["reasons"] = "Причины:\n" + msg_features["reasons"]
         msg_features["score"] = score
 
