@@ -1,3 +1,4 @@
+from collections import defaultdict
 from loguru import logger
 from src.config import WHITELIST_USERS
 from src.utils.commands import add_user_to_whitelist
@@ -8,8 +9,9 @@ from src.utils.message_processing import (
     send_spam_alert,
 )
 
+# Хранение состояния сообщений пользователей
+user_message_buffer = defaultdict(list)
 
-# Reading only new messages from new users
 async def handle_msg_with_args(
     message,
     bot,
@@ -24,26 +26,11 @@ async def handle_msg_with_args(
     TARGET_NOT_SPAM_ID,
     WHITELIST_ADMINS,
 ):
-    """
-    Function for processing messages from users and sending them to the administrator if the message is suspected of spam
-
-    Parameters
-    ----------
-    message : types.Message
-        Message from user
-    bot : Bot
-        Bot
-    ADMIN_ID : str
-        Admin id
-
-    Returns
-    -------
-    """
     logger.info(
         f"Got new message from a user {message.from_id} in {message.chat.id} ({message.chat.username}). Checking for spam..."
     )
 
-    # Getting features
+    # Сбор данных
     photo = message.photo[-1].file_id if message.photo else None
     text = message.text or message.caption or ""
     user_info = await bot.get_chat(message.from_user.id)
@@ -59,16 +46,6 @@ async def handle_msg_with_args(
     text += spoiler_link
     text += hidden_link
 
-    logger.debug(f"Chat_id: {message.chat.id}")
-    logger.debug(f"User_id: {message.from_id}")
-    logger.debug(f"User_bio: {user_description}")
-    logger.debug(f"Message_text: {text}")
-    logger.debug(f"Spoiler_link: {spoiler_link}")
-    logger.debug(f"hidden_link: {hidden_link}")
-    logger.debug(f"Contains photo: {True if photo else False}")
-    logger.debug(f"Channel: {channel}")
-
-    # Building DataFrame
     X = build_data_frame(
         text=text,
         bio=user_description,
@@ -77,13 +54,11 @@ async def handle_msg_with_args(
         reply_to_message_id=reply_to_message_id,
         channel=channel,
     )
-    print(X)
 
-    # Getting administrators of the channel
     channel_admins_info = await bot.get_chat_administrators(message.chat.id)
     admins = [admin.user.id for admin in channel_admins_info]
 
-    # Classifying message
+    # Классификация сообщения
     msg_features = await classify_message(
         X=X,
         gpt_classifier=gpt_classifier,
@@ -94,18 +69,21 @@ async def handle_msg_with_args(
         WHITELIST_USERS=WHITELIST_USERS,
     )
 
-    if (
-        (msg_features["label"] == 0)
-        and (message.from_id not in WHITELIST_USERS)
-        and msg_features["model_name"] in ["GptSpamClassifier", "RuleBasedClassifier"]
-    ):
-        # If the message is predicted as not-spam and the user is not in WHITELIST_USERS,
-        # user_id will be added to whitelist users
-        WHITELIST_USERS.append(message.from_id)
-        add_user_to_whitelist(user_id=message.from_id)
+    # Добавление сообщения в буфер пользователя
+    user_message_buffer[message.from_id].append(msg_features["label"])
 
-    logger.info(f"Label: {'Spam' if msg_features['label'] == 1 else 'Not-Spam'}")
-
+    # Проверка состояния буфера
+    if len(user_message_buffer[message.from_id]) == 3:  # Если пользователь отправил 3 сообщения
+        if all(label == 0 for label in user_message_buffer[message.from_id]):
+            # Если все 3 сообщения не являются спамом
+            if message.from_id not in WHITELIST_USERS:
+                WHITELIST_USERS.append(message.from_id)
+                add_user_to_whitelist(user_id=message.from_id)
+                logger.info(f"User {message.from_id} added to whitelist after 3 non-spam messages.")
+        # Очистка буфера после обработки 3 сообщений
+        del user_message_buffer[message.from_id]
+        
+         # Отправка уведомления (для администраторов или журналов)
     await send_spam_alert(
         bot=bot,
         message=message,
