@@ -184,18 +184,24 @@ async def send_spam_alert(
             )
 
         # Отправляем уведомления
+        sent_to = set()  # Множество для отслеживания ID, куда уже отправили сообщение
         tasks = []
-        
-        # В общий чат отправляем всегда
-        tasks.append(send_message_or_photo(bot, GROUP_CHAT_ID, spam_message, photo))
-        
-        # Администраторам тоже всегда отправляем
-        for admin_id in ADMIN_IDS:
-            tasks.append(send_message_or_photo(bot, admin_id, spam_message, photo))
 
-        # Отправляем в соответствующий канал
+        # В общий чат отправляем всегда
+        if GROUP_CHAT_ID not in sent_to:
+            tasks.append(send_message_or_photo(bot, GROUP_CHAT_ID, spam_message, photo))
+            sent_to.add(GROUP_CHAT_ID)
+
+        # Администраторам отправляем, если им ещё не отправляли
+        for admin_id in ADMIN_IDS:
+            if admin_id not in sent_to:
+                tasks.append(send_message_or_photo(bot, admin_id, spam_message, photo))
+                sent_to.add(admin_id)
+
+        # Отправляем в соответствующий канал, если ещё не отправляли
         target_id = TARGET_SPAM_ID if label >= 1 else TARGET_NOT_SPAM_ID
-        tasks.append(send_message_or_photo(bot, target_id, spam_message, photo))
+        if target_id not in sent_to:
+            tasks.append(send_message_or_photo(bot, target_id, spam_message, photo))
 
         # Выполняем все отправки асинхронно
         await asyncio.gather(*tasks)
@@ -234,7 +240,7 @@ def _build_spam_message(
     score: float,
     is_whitelisted: bool = False,
 ) -> str:
-    """Формирует текст сообщения с учетом статуса пользователя"""
+    """Формирует текст сообщения �� учетом статуса пользователя"""
     
     # Определяем тип сообщения
     if label == 2:
