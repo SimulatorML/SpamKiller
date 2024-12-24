@@ -63,4 +63,4 @@ SCRAPPER_THRESHOLD = 3
 API_ID = os.getenv("API_ID")
 API_HASH = os.getenv("API_HASH")
 
-GPT_VERSION = "gpt-3.5-turbo-0125"
+GPT_VERSION = "gpt-4o-mini"
