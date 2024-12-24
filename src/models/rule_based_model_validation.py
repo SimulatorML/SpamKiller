@@ -136,11 +136,11 @@ class RuleBasedClassifierValidation:
             temp_score, temp_name_features = rule["check"](message)
             total_score += temp_score
             name_features += temp_name_features
-        total_score_normalized = self._normalize_score(total_score, threshold=1)
+        total_score_normalized = self._normalize_score(total_score, threshold=0.7)
 
         return total_score_normalized, name_features
 
-    def _normalize_score(self, score, threshold):
+    def _normalize_score(self, score, threshold = 0.7):
         """
         Normalize the score to a range from 0 to 1 using a threshold value.
 
@@ -152,11 +152,11 @@ class RuleBasedClassifierValidation:
             float: The normalized score.
         """
         if score >= threshold:
-            normalized_score = 1.0
-        elif score < 0:
-            normalized_score = 0
+            normalized_score = 2 #сообщение точно спам
+        elif 0.2 <= score < threshold:
+            normalized_score = 1 #сообщение может быть спамом
         else:
-            normalized_score = score / threshold
+            normalized_score = 0 #сообщение точно не спам
 
         return normalized_score
 
@@ -284,6 +284,18 @@ class RuleBasedClassifierValidation:
         else:
             feature = f'[+{round(score, 1)}] - Подмена кириллицы ({", ".join(spoofed_words[:3])})\n'
 
+        return score, feature
+    
+    def _contains_emoji(self, message):
+        text = (message["text"] + "    " + message.get("bio", "")).strip()
+        score = 0.0
+        feature = ""
+
+        emojis = [char for char in text if char in emoji.EMOJI_DATA]
+
+        if emojis:
+            score += 0.15 * len(emojis)
+            feature += f"[+{round(score, 2)}] - Спам эмодзи ({', '.join(emojis[:3])})\n"
         return score, feature
 
     def _check_contains_photo(self, message):

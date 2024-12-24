@@ -1,6 +1,6 @@
 import re
-import yaml
 import emoji
+import yaml
 from dataclasses import dataclass
 from loguru import logger
 import pandas as pd
@@ -104,11 +104,11 @@ class RuleBasedClassifier:
             temp_score, temp_name_features = rule["check"](X.iloc[0, :])
             total_score += temp_score
             name_features += temp_name_features
-        total_score_normalized = self._normalize_score(total_score, threshold=1)
+        total_score_normalized = self._normalize_score(total_score, threshold=0.7)
 
         return total_score_normalized, name_features
 
-    def _normalize_score(self, score, threshold):
+    def _normalize_score(self, score, threshold = 0.7):
         """
         Normalize the score to a range from 0 to 1 using a threshold value.
 
@@ -120,11 +120,11 @@ class RuleBasedClassifier:
             float: The normalized score.
         """
         if score >= threshold:
-            normalized_score = 1.0
-        elif score < 0:
-            normalized_score = 0
+            normalized_score = 2 #сообщение точно спам
+        elif 0.2 <= score < threshold:
+            normalized_score = 1 #сообщение может быть спамом
         else:
-            normalized_score = score / threshold
+            normalized_score = 0 #сообщение точно не спам
 
         return normalized_score
 
@@ -218,40 +218,37 @@ class RuleBasedClassifier:
         return score, feature
 
     def _check_contains_cyrillic_spoofing(self, message):
-        """
-        Checks if the given message contains Cyrillic Spoofing - substituting Cyrillic letters with
-        similar-looking Latin ones to evade spam filters, e.g., replacing "и" with "i" in Russian words
-
-        Parameters:
-            message (dict): The message to check.
-
-        Returns:
-            float: The score based on whether the message contains a photo.
-        """
         text = (message["text"] + "    " + message.get("bio", "")).strip()
         score = 0.0
         feature = ""
 
-        patterns = [
-            r"(?:[а-яА-Я]+[a-zA-Z]+[а-яА-Я]+)",  # Слово начинается с рус буквы, потом англ, потом опять рус
-            r"(?:[a-zA-Z]+[а-яА-Я]+[a-zA-Z]+)",  # Cлово начинается с англ буквы, потом рус, потом опять англ
-        ]  # Не находит случаи, когда сначала идут рус буквы, а потом англ и наоборот, поскольку пользователь мог описаться
+        # Объединяем паттерны в один с именованными группами
+        pattern = re.compile(
+            r'(?P<cyr_lat_cyr>[а-яА-Я]+[a-zA-Z]+[а-яА-Я]+)|'
+            r'(?P<lat_cyr_lat>[a-zA-Z]+[а-яА-Я]+[a-zA-Z]+)'
+        )
 
-        pattern = re.compile("|".join(patterns))
-
-        spoofed_words = []
+        spoofed_words = set()  # Используем set для уникальных значений
         for word in text.split():
-            if re.findall(pattern, word):
-                score += 0.1
-                if word not in spoofed_words:
-                    spoofed_words.append(word)
+            if pattern.search(word):
+                spoofed_words.add(word)
+            
+        if len(spoofed_words) > 0:
+            score = min(0.1 * len(spoofed_words), 0.3)  # Ограничиваем максимальный score
+            feature = f'[+{round(score, 1)}] - Подмена кириллицы ({", ".join(list(spoofed_words)[:3])})\n'
 
-        if score <= 0.1:
-            score = 0.0
-            feature = ""
-        else:
-            feature = f'[+{round(score, 1)}] - Подмена кириллицы ({", ".join(spoofed_words[:3])})\n'
+        return score, feature
+    
+    def _contains_emoji(self, message):
+        text = (message["text"] + "    " + message.get("bio", "")).strip()
+        score = 0.0
+        feature = ""
 
+        emojis = [char for char in text if char in emoji.EMOJI_DATA]
+
+        if emojis:
+            score += 0.15 * len(emojis)
+            feature += f"[+{round(score, 2)}] - Спам эмодзи ({', '.join(emojis[:3])})\n"
         return score, feature
 
     def _check_contains_photo(self, message):

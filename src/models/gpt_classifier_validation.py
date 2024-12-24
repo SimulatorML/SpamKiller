@@ -200,10 +200,18 @@ class GptSpamClassifierValidation:
         if not lines:
             return None, None
 
-        # Determine the label based on the first line
-        label = 1 if "<spam>" in lines[0] else 0 if "<not-spam>" in lines[0] else None
+        # Определяем метку на основе первой строки
+        label = None
+        if "<spam>" in lines[0]:
+            label = 2  # Явный спам
+        elif "<likely-spam>" in lines[0]:
+            label = 1  # Подозрительное сообщение
+        elif "<not-spam>" in lines[0]:
+            label = 0  # Не спам
 
-        # Join all lines except the first to form the reasons string; Empty if label == 0
-        reasons = "\n".join(lines[1:]) if label == 1 else ""
+        # Объединяем все строки кроме первой для формирования причин
+        # Теперь причины сохраняем для меток 1 и 2
+        reasons = "\n".join(lines[1:]) if label in [1, 2] else ""
 
         return label, reasons
+
