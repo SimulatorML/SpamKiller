@@ -383,10 +383,38 @@ class RuleBasedClassifier:
         text = (message["text"] + "    " + message.get("bio", "")).strip()
         score = 0.0
         feature = ""
+        # Unicode кодовые точки для эмодзи
+        emojis_code = [
+            "\U00002757",  # Red Exclamation Mark
+            "\U00002753",  # Question Mark Ornament
+            "\U0001F4A6",  # Sweat Droplets
+            "\U0001F4B5",  # Dollar Banknote
+            "\U0001F4B0",  # Money Bag
+            "\U0001F4A7",  # Droplet
+            "\U0001F346",  # Eggplant
+            "\U0001F34C",  # Banana
+            "\U0001F351",  # Peach
+            "\U0001F353",  # Strawberry
+            "\U0001F352",  # Cherries
+            "\U0001F608",  # Smiling Face with Horns
+            "\U00002705",  # White Heavy Check Mark
+            "\U0001F381",  # Wrapped Present
+            "\U0001F48E",  # Gem Stone
+            "\U0001F911",  # Money-Mouth Face
+            "\U00002728",  # Sparkles
+            "\U0001F6A8",  # Police Cars Revolving Light
+        ]
+
+        emoji_pattern = re.compile("|".join(emojis_code))
+        found_emojis = emoji_pattern.findall(text)
+
+        if found_emojis:
+            score += 0.15 * len(found_emojis)
+            feature += f"[+{round(score, 2)}] - Содержатся подозрительные эмодзи ({', '.join(found_emojis[:3])})\n"
 
         emojis = [char for char in text if char in emoji.EMOJI_DATA]
 
-        if emojis:
+        if len(emojis) > 10:
             score += 0.15 * len(emojis)
             feature += f"[+{round(score, 2)}] - Спам эмодзи ({', '.join(emojis[:3])})\n"
         return score, feature
