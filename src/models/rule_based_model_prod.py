@@ -108,7 +108,7 @@ class RuleBasedClassifier:
 
         return total_score_normalized, name_features
 
-    def _normalize_score(self, score, threshold = 0.7):
+    def _normalize_score(self, score, threshold = 0.8):
         """
         Normalize the score to a range from 0 to 1 using a threshold value.
 
@@ -121,7 +121,7 @@ class RuleBasedClassifier:
         """
         if score >= threshold:
             normalized_score = 2 #сообщение точно спам
-        elif 0.2 <= score < threshold:
+        elif 0.4 <= score < threshold:
             normalized_score = 1 #сообщение может быть спамом
         else:
             normalized_score = 0 #сообщение точно не спам

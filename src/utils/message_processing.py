@@ -149,7 +149,7 @@ async def send_spam_alert(
                     # Баним только если:
                     # 1. Сообщение точно спам (label == 2)
                     # 2. Пользователь точно НЕ в белом списке
-                    if label == 2 and not is_whitelisted:
+                    if label == 2:
                         try:
                             await bot.ban_chat_member(
                                 chat_id=message.chat.id,

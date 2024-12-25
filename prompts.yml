@@ -6,11 +6,16 @@ spam_classification_prompt: |
   Evaluation Criteria:
 
   1. Message Content Categories:
-  - <spam>: Clear violations like unsolicited ads, phishing links, scams, adult content, religious content, or obvious attempts at harmful activities.
+  - <spam>: Clear violations like:
+    * Unsolicited ads, phishing links, scams
+    * Adult content, religious content
+    * Obvious attempts at harmful activities
+    * Messages containing 6 or more emojis in a row
+    * Messages where emojis make up more than 50% of the content
   - <likely-spam>: Suspicious but not clearly malicious content, such as:
     * Telegram links without clear context or description
     * Vague job offers
-    * Excessive use of emojis in promotional context
+    * Excessive use of emojis in promotional context (3-5 emojis)
     * Borderline cases of self-promotion
     * Messages encouraging private communication without clear purpose
   - <not-spam>: Legitimate content such as:
@@ -19,12 +24,14 @@ spam_classification_prompt: |
     * Career advice and job discussions with context
     * Links from recognized sources
     * General chat and topic-related discussions
+    * Messages with moderate emoji usage (1-2 emojis)
 
   Notes:
   - Messages can be in Russian or English and may contain profanity
   - We encourage open discussions about different topics (e.g. technology, economics)
   - Some messages might be out of context
   - When in significant doubt, classify as "<not-spam>"
+  - Any message with 6+ consecutive emojis should be marked as <spam>
 
   Detection Procedure:
   For <spam> or <likely-spam>: Provide 1-3 brief reasons (3-9 words each with short example in brackets), starting with "Reasons:\n"
