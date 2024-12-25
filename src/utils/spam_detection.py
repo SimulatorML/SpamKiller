@@ -1,4 +1,5 @@
 from collections import defaultdict
+from datetime import datetime, timedelta
 from loguru import logger
 from src.config import WHITELIST_USERS
 from src.utils.commands import add_user_to_whitelist
@@ -9,22 +10,28 @@ from src.utils.message_processing import (
     send_spam_alert,
 )
 
-# Хранение состояния сообщений пользователей
+# Константы
+DAYS_WINDOW = 7 # порог дней для бана, если метка == likely spam шла 2 раза подряд за период n дней
+N_LIKELY_SPAM_MESS = 2 # количество меток == likely spam, при котором будет бан за период n дней
+MESSAGES_TO_WHITELIST = 3 # порог не спам сообщений для белого листа
+
+# Хранение состояния сообщений пользователей с временными метками
 user_message_buffer = defaultdict(list)
 
+
 async def handle_msg_with_args(
-    message,
-    bot,
-    gpt_classifier,
-    rule_based_classifier,
-    THRESHOLD_RULE_BASED,
-    ADMIN_IDS,
-    GROUP_CHAT_ID,
-    AUTHORIZED_USER_IDS,
-    AUTHORIZED_GROUP_IDS,
-    TARGET_SPAM_ID,
-    TARGET_NOT_SPAM_ID,
-    WHITELIST_ADMINS,
+        message,
+        bot,
+        gpt_classifier,
+        rule_based_classifier,
+        THRESHOLD_RULE_BASED,
+        ADMIN_IDS,
+        GROUP_CHAT_ID,
+        AUTHORIZED_USER_IDS,
+        AUTHORIZED_GROUP_IDS,
+        TARGET_SPAM_ID,
+        TARGET_NOT_SPAM_ID,
+        WHITELIST_ADMINS,
 ):
     logger.info(
         f"Got new message from a user {message.from_id} in {message.chat.id} ({message.chat.username}). Checking for spam..."
@@ -69,21 +76,55 @@ async def handle_msg_with_args(
         WHITELIST_USERS=WHITELIST_USERS,
     )
 
-    # Добавление сообщения в буфер пользователя
-    user_message_buffer[message.from_id].append(msg_features["label"])
+    # Добавление сообщения в буфер пользователя с временной меткой
+    current_time = datetime.now()
+    user_message_buffer[message.from_id].append({
+        "label": msg_features["label"],
+        "timestamp": current_time
+    })
 
-    # Проверка состояния буфера
-    if len(user_message_buffer[message.from_id]) == 3:  # Если пользователь отправил 3 сообщения
-        if all(label == 0 for label in user_message_buffer[message.from_id]):
-            # Если все 3 сообщения не являются спамом
+    # Проверка на добавление в белый список (3 не-спам сообщения, MESSAGES_TO_WHITELIST не спам-сообщений)
+    messages = user_message_buffer[message.from_id]
+    if len(messages) >= MESSAGES_TO_WHITELIST:
+        last_messages = messages[-MESSAGES_TO_WHITELIST:]
+        if all(msg["label"] == 0 for msg in last_messages):
             if message.from_id not in WHITELIST_USERS:
                 WHITELIST_USERS.append(message.from_id)
                 add_user_to_whitelist(user_id=message.from_id)
-                logger.info(f"User {message.from_id} added to whitelist after 3 non-spam messages.")
-        # Очистка буфера после обработки 3 сообщений
-        del user_message_buffer[message.from_id]
-        
-         # Отправка уведомления (для администраторов или журналов)
+                # Очищаем буфер после добавления в белый список
+                user_message_buffer[message.from_id].clear()
+
+                logger.info(f"User {message.from_id} added to whitelist after {MESSAGES_TO_WHITELIST} non-spam messages.")
+
+    # Проверка на спам (любые два label==1 в течение DAYS_WINDOW дней)
+    if len(messages) >= N_LIKELY_SPAM_MESS:
+        # Получаем все сообщения с label==1 за последние DAYS_WINDOW дней
+        spam_messages = [msg for msg in messages if msg["label"] == 1]
+
+        if len(spam_messages) >= N_LIKELY_SPAM_MESS:
+            # Проверяем только последние соседние спам-сообщения
+            time_diff = (spam_messages[-1]["timestamp"] - spam_messages[-2]["timestamp"]).days
+            if time_diff <= DAYS_WINDOW:
+                logger.warning(f"User {message.from_id} has sent two spam messages within {time_diff} days")
+                # Повышаем уровень угрозы
+                msg_features["label"] = 2
+                msg_features["reasons"] += f"\nПовышен уровень угрозы: найдено 2 спам-сообщения за {time_diff} дней"
+                # Очищаем буфер после бана
+                user_message_buffer[message.from_id].clear()
+                try:
+                    await bot.ban_chat_member(
+                        chat_id=message.chat.id,
+                        user_id=message.from_id
+                    )
+                    await bot.send_message(
+                        chat_id=message.chat.id,
+                        text=f"User {message.from_user.mention} was banned for repeated spam activity"
+                    )
+                    logger.info(f"Banned user {message.from_id} for repeated spam messages")
+                except Exception as e:
+                    logger.error(f"Failed to ban user {message.from_id}: {e}")
+
+        # Отправка уведомления (для администраторов или журналов)
     await send_spam_alert(
         bot=bot,
         message=message,
@@ -102,4 +143,5 @@ async def handle_msg_with_args(
         ADMIN_IDS=ADMIN_IDS,
         TARGET_SPAM_ID=TARGET_SPAM_ID,
         TARGET_NOT_SPAM_ID=TARGET_NOT_SPAM_ID,
+        WHITELIST_USERS=WHITELIST_USERS,
     )
