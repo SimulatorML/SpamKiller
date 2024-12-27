@@ -40,6 +40,7 @@ ruff = "^0.1.11"
 exclude = [
     "src/app/bot.py", # Because of handlers import
     "src/handlers/commands.py", # Because of unused import (ADMIN_IDS)
+    "src/utils/spam_detection.py", # Because of timedelta import
     "**/__init__.py",
     ".bzr",
     ".direnv",
