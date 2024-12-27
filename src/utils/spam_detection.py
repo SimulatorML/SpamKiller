@@ -116,10 +116,7 @@ async def handle_msg_with_args(
                         chat_id=message.chat.id,
                         user_id=message.from_id
                     )
-                    await bot.send_message(
-                        chat_id=message.chat.id,
-                        text=f"User {message.from_user.mention} was banned for repeated spam activity"
-                    )
+
                     logger.info(f"Banned user {message.from_id} for repeated spam messages")
                 except Exception as e:
                     logger.error(f"Failed to ban user {message.from_id}: {e}")
