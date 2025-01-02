@@ -33,112 +33,137 @@ async def handle_msg_with_args(
         TARGET_NOT_SPAM_ID,
         WHITELIST_ADMINS,
 ):
-    logger.info(
-        f"Got new message from a user {message.from_id} in {message.chat.id} ({message.chat.username}). Checking for spam..."
-    )
+    # Добавим логирование для отладки
+    logger.info(f"Starting message processing for user {message.from_id}")
 
-    # Сбор данных
-    photo = message.photo[-1].file_id if message.photo else None
-    text = message.text or message.caption or ""
-    user_info = await bot.get_chat(message.from_user.id)
-    user_description = user_info.bio or ""
-    reply_to_message_id = (
-        message.reply_to_message.message_id if message.reply_to_message else None
-    )
-    channel = message.chat.username
+    try:
+        # Сбор данных
+        photo = message.photo[-1].file_id if message.photo else None
+        text = message.text or message.caption or ""
+        
+        # Получение информации о пользователе
+        try:
+            user_info = await bot.get_chat(message.from_user.id)
+            user_description = user_info.bio or ""
+        except Exception as e:
+            logger.error(f"Failed to get user info: {e}")
+            user_description = ""
 
-    spoiler_link, hidden_link = extract_entities(message=message)
+        reply_to_message_id = (
+            message.reply_to_message.message_id if message.reply_to_message else None
+        )
+        channel = message.chat.username
 
-    text = text[:550]
-    text += spoiler_link
-    text += hidden_link
+        spoiler_link, hidden_link = extract_entities(message=message)
 
-    X = build_data_frame(
-        text=text,
-        bio=user_description,
-        from_id=message.from_id,
-        photo=photo,
-        reply_to_message_id=reply_to_message_id,
-        channel=channel,
-    )
+        text = text[:550]
+        text += spoiler_link
+        text += hidden_link
 
-    channel_admins_info = await bot.get_chat_administrators(message.chat.id)
-    admins = [admin.user.id for admin in channel_admins_info]
+        X = build_data_frame(
+            text=text,
+            bio=user_description,
+            from_id=message.from_id,
+            photo=photo,
+            reply_to_message_id=reply_to_message_id,
+            channel=channel,
+        )
 
-    # Классификация сообщения
-    msg_features = await classify_message(
-        X=X,
-        gpt_classifier=gpt_classifier,
-        rule_based_classifier=rule_based_classifier,
-        THRESHOLD_RULE_BASED=THRESHOLD_RULE_BASED,
-        admins=admins,
-        WHITELIST_ADMINS=WHITELIST_ADMINS,
-        WHITELIST_USERS=WHITELIST_USERS,
-    )
+        channel_admins_info = await bot.get_chat_administrators(message.chat.id)
+        admins = [admin.user.id for admin in channel_admins_info]
 
-    # Добавление сообщения в буфер пользователя с временной меткой
-    current_time = datetime.now()
-    user_message_buffer[message.from_id].append({
-        "label": msg_features["label"],
-        "timestamp": current_time
-    })
+        # Классификация сообщения
+        msg_features = await classify_message(
+            X=X,
+            gpt_classifier=gpt_classifier,
+            rule_based_classifier=rule_based_classifier,
+            THRESHOLD_RULE_BASED=THRESHOLD_RULE_BASED,
+            admins=admins,
+            WHITELIST_ADMINS=WHITELIST_ADMINS,
+            WHITELIST_USERS=WHITELIST_USERS,
+        )
 
-    # Проверка на добавление в белый список (3 не-спам сообщения, MESSAGES_TO_WHITELIST не спам-сообщений)
-    messages = user_message_buffer[message.from_id]
-    if len(messages) >= MESSAGES_TO_WHITELIST:
-        last_messages = messages[-MESSAGES_TO_WHITELIST:]
-        if all(msg["label"] == 0 for msg in last_messages):
-            if message.from_id not in WHITELIST_USERS:
-                WHITELIST_USERS.append(message.from_id)
-                add_user_to_whitelist(user_id=message.from_id)
-                # Очищаем буфер после добавления в белый список
-                user_message_buffer[message.from_id].clear()
+        # Добавление сообщения в буфер пользователя с временной меткой
+        current_time = datetime.now()
+        user_message_buffer[message.from_id].append({
+            "label": msg_features["label"],
+            "timestamp": current_time
+        })
 
-                logger.info(f"User {message.from_id} added to whitelist after {MESSAGES_TO_WHITELIST} non-spam messages.")
+        # Проверка на добавление в белый список (3 не-спам сообщения, MESSAGES_TO_WHITELIST не спам-сообщений)
+        messages = user_message_buffer[message.from_id]
+        if len(messages) >= MESSAGES_TO_WHITELIST:
+            last_messages = messages[-MESSAGES_TO_WHITELIST:]
+            if all(msg["label"] == 0 for msg in last_messages):
+                if message.from_id not in WHITELIST_USERS:
+                    WHITELIST_USERS.append(message.from_id)
+                    add_user_to_whitelist(user_id=message.from_id)
+                    # Очищаем буфер после добавления в белый список
+                    user_message_buffer[message.from_id].clear()
 
-    # Проверка на спам (любые два label==1 в течение DAYS_WINDOW дней)
-    if len(messages) >= N_LIKELY_SPAM_MESS:
-        # Получаем все сообщения с label==1 за последние DAYS_WINDOW дней
-        spam_messages = [msg for msg in messages if msg["label"] == 1]
+                    logger.info(f"User {message.from_id} added to whitelist after {MESSAGES_TO_WHITELIST} non-spam messages.")
 
-        if len(spam_messages) >= N_LIKELY_SPAM_MESS:
-            # Проверяем только последние соседние спам-сообщения
-            time_diff = (spam_messages[-1]["timestamp"] - spam_messages[-2]["timestamp"]).days
-            if time_diff <= DAYS_WINDOW:
-                logger.warning(f"User {message.from_id} has sent two spam messages within {time_diff} days")
-                # Повышаем уровень угрозы
-                msg_features["label"] = 2
-                msg_features["reasons"] += f"\nПовышен уровень угрозы: найдено 2 спам-сообщения за {time_diff} дней"
-                # Очищаем буфер после бана
-                user_message_buffer[message.from_id].clear()
-                try:
-                    await bot.ban_chat_member(
-                        chat_id=message.chat.id,
-                        user_id=message.from_id
-                    )
+        # Проверка на спам (любые два label==1 в течение DAYS_WINDOW дней)
+        if len(messages) >= N_LIKELY_SPAM_MESS:
+            # Получаем все сообщения с label==1 за последние DAYS_WINDOW дней
+            spam_messages = [msg for msg in messages if msg["label"] == 1]
 
-                    logger.info(f"Banned user {message.from_id} for repeated spam messages")
-                except Exception as e:
-                    logger.error(f"Failed to ban user {message.from_id}: {e}")
+            if len(spam_messages) >= N_LIKELY_SPAM_MESS:
+                # Проверяем только последние соседние спам-сообщения
+                time_diff = (spam_messages[-1]["timestamp"] - spam_messages[-2]["timestamp"]).days
+                if time_diff <= DAYS_WINDOW:
+                    logger.warning(f"User {message.from_id} has sent two spam messages within {time_diff} days")
+                    # Повышаем уровень угрозы
+                    msg_features["label"] = 2
+                    msg_features["reasons"] += f"\nПовышен уровень угрозы: найдено 2 спам-сообщения за {time_diff} дней"
+                    # Очищаем буфер после бана
+                    user_message_buffer[message.from_id].clear()
+                    try:
+                        await bot.ban_chat_member(
+                            chat_id=message.chat.id,
+                            user_id=message.from_id
+                        )
 
-        # Отправка уведомления (для администраторов или журналов)
-    await send_spam_alert(
-        bot=bot,
-        message=message,
-        label=msg_features["label"],
-        reasons=msg_features["reasons"],
-        text=text,
-        prompt_name=msg_features["prompt_name"],
-        model_name=msg_features["model_name"],
-        score=msg_features["score"],
-        time_spent=msg_features["time_spent"],
-        prompt_tokens=msg_features["prompt_tokens"],
-        completion_tokens=msg_features["completion_tokens"],
-        photo=photo,
-        user_description=user_description,
-        GROUP_CHAT_ID=GROUP_CHAT_ID,
-        ADMIN_IDS=ADMIN_IDS,
-        TARGET_SPAM_ID=TARGET_SPAM_ID,
-        TARGET_NOT_SPAM_ID=TARGET_NOT_SPAM_ID,
-        WHITELIST_USERS=WHITELIST_USERS,
-    )
+                        logger.info(f"Banned user {message.from_id} for repeated spam messages")
+                    except Exception as e:
+                        logger.error(f"Failed to ban user {message.from_id}: {e}")
+
+        # Добавим логирование перед отправкой сообщения
+        logger.info(f"Preparing to send spam alert. Label: {msg_features['label']}")
+        
+        # Проверим все необходимые параметры перед отправкой
+        logger.info(f"Message features: {msg_features}")
+        
+        await send_spam_alert(
+            bot=bot,
+            message=message,
+            label=msg_features["label"],
+            reasons=msg_features["reasons"],
+            text=text,
+            prompt_name=msg_features.get("prompt_name", "None"),  # Используем .get() с дефолтными значениями
+            model_name=msg_features.get("model_name", "None"),
+            score=msg_features.get("score", 0.0),
+            time_spent=msg_features.get("time_spent", 0.0),
+            prompt_tokens=msg_features.get("prompt_tokens", 0),
+            completion_tokens=msg_features.get("completion_tokens", 0),
+            photo=photo,
+            user_description=user_description,
+            GROUP_CHAT_ID=GROUP_CHAT_ID,
+            ADMIN_IDS=ADMIN_IDS,
+            TARGET_SPAM_ID=TARGET_SPAM_ID,
+            TARGET_NOT_SPAM_ID=TARGET_NOT_SPAM_ID,
+            WHITELIST_USERS=WHITELIST_USERS,
+            profile_analysis=msg_features.get("profile_analysis"),
+        )
+        
+        logger.info("Spam alert sent successfully")
+        
+    except Exception as e:
+        logger.error(f"Error in handle_msg_with_args: {e}")
+        # Можно добавить отправку уведомления об ошибке администраторам
+        try:
+            error_message = f"Error processing message:\n{str(e)}"
+            await bot.send_message(GROUP_CHAT_ID, error_message)
+        except:
+            pass
+    
