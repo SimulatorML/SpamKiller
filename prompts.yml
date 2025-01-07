@@ -27,6 +27,8 @@ spam_classification_prompt: |
     * Links from recognized sources, trusted resources (e.g., GitHub)
     * General chat and on-topic discussions with reasonable use of emojis (1-2 emojis)
     * Informal or humorous messages without promotional or harmful intent
+    * Links to the current chat ("karpovcourseschat") without context
+    * The command /subscription@VibeDatingBot in the "bogdanisssimo" chat
 
   Notes:
   - Messages can be in Russian or English and may contain profanity
@@ -69,7 +71,7 @@ spam_classification_prompt_karpov_courses: |
     * Excessive self-promotion (except Karpov.Courses related)
     * Messages encouraging private communication without clear purpose
     * Borderline promotional content (e.g., external course recomendations without explanation)
-    * Excessive emoji use in promotional context (>5 emojis in a row)
+    * Excessive emoji use in promotional context (>6 emojis in a row)
 
   - <not-spam>: Legitimate content such as:
     * Any Karpov.Courses related content (questions, enrollment, etc.)
@@ -79,6 +81,7 @@ spam_classification_prompt_karpov_courses: |
     * Code sharing and debugging help
     * General chat and topic-related discussions
     * Messages with moderate emoji usage (1-5 emojis)
+    * Links to "karpovcourseschat" without context
 
   Notes:
   - Messages can be in Russian or English and may contain profanity
