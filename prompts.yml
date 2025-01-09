@@ -11,8 +11,7 @@ spam_classification_prompt: |
     * Adult content, religious or offensive content
     * Obvious attempts at harmful activities
     * Messages designed to deceive, harm, or mislead users
-    * Messages containing 7 or more emojis in a row
-    * Messages where emojis make up more than 70% of the content
+    * Messages containing 5 or more emoji with no meaningful text or context 
   - <likely-spam>: Suspicious but not clearly malicious content, such as:
     * External Telegram links without context (except links to the current chat or well-known resources like GitHub)
     * Vague job offers without sufficient details
@@ -24,18 +23,18 @@ spam_classification_prompt: |
     * Technical discussions and related questions
     * Code sharing and debugging help
     * Career advice, well-detailed job offers, or professional discussions
-    * Links from recognized sources, trusted resources (e.g., GitHub)
-    * General chat and on-topic discussions with reasonable use of emojis (1-2 emojis)
+    * Links from recognized sources, trusted resources (e.g., GitHub, Stepik, YouTube, Habr)
+    * General chat and on-topic discussions with reasonable use of emojis (1-3 emojis)
     * Informal or humorous messages without promotional or harmful intent
-    * Links to the current chat ("karpovcourseschat") without context
-    * The command /subscription@VibeDatingBot in the "bogdanisssimo" chat
+    * Links to the current chat without context
+    * The command /subscription@VibeDatingBot in the "bogdanisssimo" chat (this is a trusted bot and should never be marked as spam)
 
   Notes:
   - Messages can be in Russian or English and may contain profanity
   - We encourage open discussions about different topics (e.g. technology, economics)
   - Some messages might lack context but should not be classified as spam unless harmful intent is evident
   - When in significant doubt, classify as "<not-spam>"
-  - Any message with 7+ consecutive emojis should be marked as <spam>
+  - The command /subscription@VibeDatingBot is explicitly allowed in the "bogdanisssimo" chat and should never be marked as spam
 
   Detection Procedure:
   For <spam> or <likely-spam>: Provide 1-3 brief reasons (3-9 words each with short example in brackets), starting with "Reasons:\n"
@@ -62,7 +61,7 @@ spam_classification_prompt_karpov_courses: |
     * Scams or fraudulent content
     * Adult content, religious or offensive content
     * Direct attempts to move communication private
-    * Excessive emoji usage (6+ consecutive emojis)
+    * Messages containing 6 or more emoji with no meaningful text or context
   
   - <likely-spam>: Suspicious but not clearly malicious content, such as:
     * Telegram links without clear context (excluding `karpovcourseschat` links)
@@ -71,12 +70,12 @@ spam_classification_prompt_karpov_courses: |
     * Excessive self-promotion (except Karpov.Courses related)
     * Messages encouraging private communication without clear purpose
     * Borderline promotional content (e.g., external course recomendations without explanation)
-    * Excessive emoji use in promotional context (>6 emojis in a row)
+    * Excessive emoji use in promotional context (>5 emojis in a row)
 
   - <not-spam>: Legitimate content such as:
     * Any Karpov.Courses related content (questions, enrollment, etc.)
     * Links containing 'karpov' (e.g., 'https://karpov.courses', '@karpov_anatoly', '@karpovcourseschat')
-    * Links to educational or well-known platforms (e.g., Stepik, YouTube, GitHub)
+    * Links to educational or well-known platforms (e.g., Stepik, YouTube, GitHub, Habr)
     * Technical discussions and course-related questions
     * Code sharing and debugging help
     * General chat and topic-related discussions
