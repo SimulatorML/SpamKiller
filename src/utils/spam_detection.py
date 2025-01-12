@@ -1,7 +1,10 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
 from loguru import logger
-from src.config import WHITELIST_USERS
+from src.config import (
+    WHITELIST_USERS,
+    GOLDLIST_USERS,
+)
 from src.utils.commands import add_user_to_whitelist
 from src.utils.message_processing import (
     extract_entities,
@@ -81,6 +84,7 @@ async def handle_msg_with_args(
             admins=admins,
             WHITELIST_ADMINS=WHITELIST_ADMINS,
             WHITELIST_USERS=WHITELIST_USERS,
+            GOLDLIST_USERS=GOLDLIST_USERS,
         )
 
         # Добавление сообщения в буфер пользователя с временной меткой

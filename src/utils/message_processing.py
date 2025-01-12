@@ -5,6 +5,32 @@ from aiogram import types, Bot
 from loguru import logger
 import asyncio
 from src.models.user_analisys import ProfileClassifier
+from datetime import datetime, timedelta
+
+# Добавить глобальные переменные для отслеживания состояния
+profile_analyzer_active = False
+profile_analyzer_start_time = None
+ANALYSIS_DURATION = timedelta(minutes=5)
+
+# Добавить функцию активации анализатора
+async def activate_profile_analyzer():
+    global profile_analyzer_active, profile_analyzer_start_time
+    profile_analyzer_active = True
+    profile_analyzer_start_time = datetime.now()
+    logger.info("Profile analyzer activated for 5 minutes")
+
+# Добавить функцию проверки состояния анализатора
+def is_profile_analyzer_active():
+    global profile_analyzer_active, profile_analyzer_start_time
+    if not profile_analyzer_active:
+        return False
+    
+    if datetime.now() - profile_analyzer_start_time > ANALYSIS_DURATION:
+        profile_analyzer_active = False
+        logger.info("Profile analyzer deactivated due to timeout")
+        return False
+    
+    return True
 
 def extract_entities(message: types.Message) -> Tuple[str, str]:
     spoiler_link = ""
@@ -44,6 +70,7 @@ async def classify_message(
     admins: List[int],
     WHITELIST_ADMINS: List[int],
     WHITELIST_USERS: List[int],
+    GOLDLIST_USERS: List[int],
 ) -> dict:
     text = X.iloc[0, :].text
     user_id = X.iloc[0, :].from_id
@@ -53,26 +80,27 @@ async def classify_message(
         "label": None, "reasons": None, "model_name": "None",
         "score": 0.0, "time_spent": 0.0, "prompt_name": "None",
         "prompt_tokens": 0, 'completion_tokens': 0,
-        "profile_analysis": None  # Добавляем поле для результатов анализа профиля
+        "profile_analysis": None
     }
 
+    # Проверяем, нужно ли анализировать профиль
+    profile_analysis_enabled = is_profile_analyzer_active()
     profile_classifier = None
+
     try:
-        # Создаем и запускаем анализатор профиля
-        profile_classifier = ProfileClassifier()
-        
-        # Запускаем параллельно проверку профиля и сообщения
-        profile_task = asyncio.create_task(profile_classifier.analyze_profile(user_id))
-        
-        logger.info(f"Started profile analysis for user {user_id}")
-        
+        # Проверяем активацию анализатора только для goldlist
+        if user_id in GOLDLIST_USERS:
+            # Если сообщение от пользователя из goldlist, активируем анализатор
+            await activate_profile_analyzer()
+            logger.info(f"Profile analyzer activated by goldlist user {user_id}")
+
         # Проверяем белые списки
-        if user_id in admins or user_id in WHITELIST_ADMINS:
+        if user_id in admins:
             msg_features["label"] = 0
             msg_features["reasons"] = "Пояснение: Админов нельзя трогать. Они хорошие"
             return msg_features
 
-        if user_id in WHITELIST_USERS:
+        if user_id in WHITELIST_ADMINS or user_id in WHITELIST_USERS:
             msg_features["label"] = 0
             msg_features["reasons"] = "Пояснение: Пользователь в белом списке"
             return msg_features
@@ -104,21 +132,26 @@ async def classify_message(
             else:
                 msg_features['label'] = 0
 
-        # Ждем результаты анализа профиля
-        profile_results = await profile_task
-        logger.info(f"Profile analysis results: {profile_results}")
-        
-        msg_features["profile_analysis"] = profile_results
-        
-        # Повышаем уровень угрозы, если профиль подозрительный
-        if profile_results.get('overall_score', 0) >= 0.8 and msg_features['label'] < 2:
-            msg_features['label'] = min(msg_features['label'] + 1, 2)
-            msg_features['reasons'] += "\n\n⚠️ Уровень угрозы повышен из-за подозрительного профиля"
-        
-        # Добавляем новую проверку на подозрительные особенности
-        elif profile_results.get('overall_score', 0) == 0 and 'особенности' in profile_results.get('features', '').lower():
-            msg_features['label'] = max(msg_features['label'], 1)  # Повышаем до 1, если было 0
-            msg_features['reasons'] += "\n\n⚠️ Подозрительные особенности в профиле, несмотря на низкую оценку"
+        # Анализируем профиль только если анализатор активен
+        if profile_analysis_enabled:
+            try:
+                profile_classifier = ProfileClassifier()
+                profile_results = await profile_classifier.analyze_profile(user_id)
+                logger.info(f"Profile analysis results: {profile_results}")
+                
+                msg_features["profile_analysis"] = profile_results
+                
+                # Повышаем уровень угрозы, если профиль подозрительный
+                if profile_results.get('overall_score', 0) >= 0.8 and msg_features['label'] < 2:
+                    msg_features['label'] = min(msg_features['label'] + 1, 2)
+                    msg_features['reasons'] += "\n\n⚠️ Уровень угрозы повышен из-за подозрительного профиля"
+                
+                elif profile_results.get('overall_score', 0) == 0 and 'особенности' in profile_results.get('features', '').lower():
+                    msg_features['label'] = max(msg_features['label'], 1)
+                    msg_features['reasons'] += "\n\n⚠️ Подозрительные особенности в профиле, несмотря на низкую оценку"
+            
+            except Exception as e:
+                logger.error(f"Error in profile analysis: {e}")
 
     except Exception as e:
         logger.error(f"Error in classify_message: {e}")
