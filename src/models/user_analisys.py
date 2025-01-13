@@ -9,7 +9,6 @@ from telethon.sync import TelegramClient
 from telethon.tl.functions.users import GetFullUserRequest
 from telethon.tl.functions.stories import GetPeerStoriesRequest
 from telethon.tl.types import InputPeerUser
-import re
 from loguru import logger
 from src.config import (
     API_HASH,
