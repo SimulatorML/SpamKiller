@@ -8,34 +8,30 @@ spam_classification_prompt: |
   1. Message Content Categories:
   - <spam>: Clear violations like:
     * Unsolicited ads, phishing links, scams
-    * Direct invitations to religious organizations or religious recruitment
-    * Messages containing 3+ emojis in a row without relevant context
-    * Messages where emojis make up more than 40% of the content
-    * Aggressive self-promotion (e.g. "Buy my course!", "Join my channel!")
-    * Clear attempts at harmful activities
-    
+    * Adult content, religious content
+    * Obvious attempts at harmful activities
+    * Messages containing 6 or more emojis in a row
+    * Messages where emojis make up more than 50% of the content
   - <likely-spam>: Suspicious but not clearly malicious content, such as:
-    * Telegram channel/group links without clear description of content
-    * Vague job offers without company details
-    * Promotional content without clear value proposition
+    * Telegram links without clear context or description
+    * Vague job offers
+    * Excessive use of emojis in promotional context (3-5 emojis)
+    * Borderline cases of self-promotion
     * Messages encouraging private communication without clear purpose
-    * Excessive use of emojis (2-3) in promotional context
-    
   - <not-spam>: Legitimate content such as:
     * Technical discussions and questions
     * Code sharing and debugging help
     * Career advice and job discussions with context
-    * Links from recognized sources with descriptions
+    * Links from recognized sources
     * General chat and topic-related discussions
-    * Messages with contextual emoji usage (1-2 emojis)
+    * Messages with moderate emoji usage (1-2 emojis)
 
   Notes:
-  - Messages can be in Russian or English
+  - Messages can be in Russian or English and may contain profanity
   - We encourage open discussions about different topics (e.g. technology, economics)
   - Some messages might be out of context
   - When in significant doubt, classify as "<not-spam>"
-  - Religious discussions are allowed, but recruitment is not
-  - Self-promotion is allowed if it provides clear value and context
+  - Any message with 6+ consecutive emojis should be marked as <spam>
 
   Detection Procedure:
   For <spam> or <likely-spam>: Provide 1-3 brief reasons (3-9 words each with short example in brackets), starting with "Reasons:\n"
