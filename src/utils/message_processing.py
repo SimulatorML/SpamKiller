@@ -4,6 +4,33 @@ from typing import Tuple, List
 from aiogram import types, Bot
 from loguru import logger
 import asyncio
+from src.models.user_analisys import ProfileClassifier
+from datetime import datetime, timedelta
+
+# Добавить глобальные переменные для отслеживания состояния
+profile_analyzer_active = False
+profile_analyzer_start_time = None
+ANALYSIS_DURATION = timedelta(minutes=5)
+
+# Добавить функцию активации анализатора
+async def activate_profile_analyzer():
+    global profile_analyzer_active, profile_analyzer_start_time
+    profile_analyzer_active = True
+    profile_analyzer_start_time = datetime.now()
+    logger.info("Profile analyzer activated for 5 minutes")
+
+# Добавить функцию проверки состояния анализатора
+def is_profile_analyzer_active():
+    global profile_analyzer_active, profile_analyzer_start_time
+    if not profile_analyzer_active:
+        return False
+    
+    if datetime.now() - profile_analyzer_start_time > ANALYSIS_DURATION:
+        profile_analyzer_active = False
+        logger.info("Profile analyzer deactivated due to timeout")
+        return False
+    
+    return True
 
 def extract_entities(message: types.Message) -> Tuple[str, str]:
     spoiler_link = ""
@@ -43,52 +70,109 @@ async def classify_message(
     admins: List[int],
     WHITELIST_ADMINS: List[int],
     WHITELIST_USERS: List[int],
+    GOLDLIST_USERS: List[int],
 ) -> dict:
     text = X.iloc[0, :].text
     user_id = X.iloc[0, :].from_id
     score = 0.0
 
-    msg_features = {"label": None, "reasons": None, "model_name": "None",
-                    "score": 0.0, "time_spent": 0.0, "prompt_name": "None",
-                    "prompt_tokens": 0, 'completion_tokens': 0
-                    }
+    msg_features = {
+        "label": None, "reasons": None, "model_name": "None",
+        "score": 0.0, "time_spent": 0.0, "prompt_name": "None",
+        "prompt_tokens": 0, 'completion_tokens': 0,
+        "profile_analysis": None
+    }
 
-    if user_id in admins or user_id in WHITELIST_ADMINS:
-        msg_features["label"] = 0
-        msg_features["reasons"] = "Пояснение: Админов нельзя трогать. Они хорошие"
-        return msg_features
+    # Проверяем, нужно ли анализировать профиль
+    profile_analysis_enabled = is_profile_analyzer_active()
+    profile_classifier = None
 
-    if user_id in WHITELIST_USERS:
-        msg_features["label"] = 0
-        msg_features["reasons"] = "Пояснение: Пользователь в белом списке"
-        return msg_features
+    try:
+        # Проверяем активацию анализатора только для goldlist
+        if user_id in GOLDLIST_USERS:
+            # Если сообщение от пользователя из goldlist, активируем анализатор
+            await activate_profile_analyzer()
+            logger.info(f"Profile analyzer activated by goldlist user {user_id}")
 
-    if not text:
-        msg_features["label"] = 0
-        msg_features["reasons"] = "Пояснение: нет текста в сообщении"
-        return msg_features
+        # Проверяем белые списки
+        if user_id in admins:
+            msg_features["label"] = 0
+            msg_features["reasons"] = "Пояснение: Админов нельзя трогать. Они хорошие"
+            return msg_features
 
-    msg_features["model_name"] = "GptSpamClassifier"
-    response = await gpt_classifier.predict(X)
-    response = response[0]
-    logger.info(response)
-    keys = ['label', 'reasons', 'prompt_tokens', 'completion_tokens', 'time_spent', 'prompt_name']
-    for key, value in zip(keys, response.values()):
-        msg_features[key] = value
+        if user_id in WHITELIST_ADMINS or user_id in WHITELIST_USERS:
+            msg_features["label"] = 0
+            msg_features["reasons"] = "Пояснение: Пользователь в белом списке"
+            return msg_features
 
-    if msg_features['label'] is None:
-        msg_features['model_name'] = "RuleBasedClassifier"
-        score, reasons = rule_based_classifier.predict(X)
-        msg_features['score'] = score
-        msg_features['reasons'] = "Причины:\n" + reasons
-        
-        # Новая логика для трехуровневой классификации
-        if score == 2:  # Точно спам
-            msg_features['label'] = 2
-        elif score == 1:  # Возможно спам
-            msg_features['label'] = 1
-        else:  # Не спам
-            msg_features['label'] = 0
+        if not text:
+            msg_features["label"] = 0
+            msg_features["reasons"] = "Пояснение: нет текста в сообщении"
+            return msg_features
+
+        # Получаем результаты анализа сообщения
+        msg_features["model_name"] = "GptSpamClassifier"
+        response = await gpt_classifier.predict(X)
+        response = response[0]
+        logger.info(response)
+        keys = ['label', 'reasons', 'prompt_tokens', 'completion_tokens', 'time_spent', 'prompt_name']
+        for key, value in zip(keys, response.values()):
+            msg_features[key] = value
+
+        if msg_features['label'] is None:
+            msg_features['model_name'] = "RuleBasedClassifier"
+            score, reasons = rule_based_classifier.predict(X)
+            msg_features['score'] = score
+            msg_features['reasons'] = "Причины:\n" + reasons
+            
+            if score == 2:
+                msg_features['label'] = 2
+            elif score == 1:
+                msg_features['label'] = 1
+            else:
+                msg_features['label'] = 0
+
+        # Анализируем профиль только если анализатор активен
+        if profile_analysis_enabled:
+            try:
+                profile_classifier = ProfileClassifier()
+                profile_results = await profile_classifier.analyze_profile(user_id)
+                logger.info(f"Profile analysis results: {profile_results}")
+                
+                msg_features["profile_analysis"] = profile_results
+                
+                # Повышаем уровень угрозы, если профиль подозрительный
+                if profile_results.get('overall_score', 0) >= 0.8 and msg_features['label'] < 2:
+                    msg_features['label'] = min(msg_features['label'] + 1, 2)
+                    msg_features['reasons'] += "\n\n⚠️ Уровень угрозы повышен из-за подозрительного профиля"
+                
+                elif profile_results.get('overall_score', 0) == 0 and 'особенности' in profile_results.get('features', '').lower():
+                    msg_features['label'] = max(msg_features['label'], 1)
+                    msg_features['reasons'] += "\n\n⚠️ Подозрительные особенности в профиле, несмотря на низкую оценку"
+            
+            except Exception as e:
+                logger.error(f"Error in profile analysis: {e}")
+
+    except Exception as e:
+        logger.error(f"Error in classify_message: {e}")
+        return {
+            "label": 0,
+            "reasons": f"Error during message classification: {str(e)}",
+            "model_name": "Error",
+            "score": 0.0,
+            "time_spent": 0.0,
+            "prompt_name": "None",
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "profile_analysis": None
+        }
+    finally:
+        # Закрываем клиент в блоке finally
+        if profile_classifier:
+            try:
+                await profile_classifier.close()
+            except Exception as e:
+                logger.error(f"Error closing profile classifier: {e}")
 
     return msg_features
 
@@ -111,12 +195,16 @@ async def send_spam_alert(
     TARGET_SPAM_ID: int,
     TARGET_NOT_SPAM_ID: int,
     WHITELIST_USERS: List[int] = None,
+    profile_analysis: dict = None,  # Добавляем параметр для анализа профиля
 ):
     """
     Отправляет уведомление о спаме и удаляет спам-сообщения.
     Спам-сообщения удаляются для ВСЕХ пользователей, включая тех, кто в белом списке.
     """
     try:
+        # Добавим логирование в начале функции
+        logger.info(f"Starting send_spam_alert for message {message.message_id}")
+        
         # Проверяем, является ли сообщение спамом (label >= 1)
         if label >= 1:
             try:
@@ -162,7 +250,7 @@ async def send_spam_alert(
             except Exception as e:
                 logger.error(f"Failed to process spam message {message.message_id}: {e}")
 
-        # Формируем сообщение для отправки
+        # Формируем сообщение для отправки с учетом анализа профиля
         spam_message = _build_spam_message(
             message=message,
             label=label,
@@ -173,9 +261,12 @@ async def send_spam_alert(
             time_spent=time_spent,
             reasons=reasons,
             score=score,
-            is_whitelisted=WHITELIST_USERS and message.from_user.id in WHITELIST_USERS
+            is_whitelisted=WHITELIST_USERS and message.from_user.id in WHITELIST_USERS,
+            profile_analysis=profile_analysis  # Передаем результаты анализа профиля
         )
 
+        logger.info(f"Built spam message: {spam_message[:100]}...")  # Логируем начало сообщения
+        
         # Добавляем информацию о токенах для GPT
         if model_name == 'GptSpamClassifier':
             spam_message += (
@@ -188,9 +279,10 @@ async def send_spam_alert(
         tasks = []
 
         # В общий чат отправляем всегда
-        if GROUP_CHAT_ID not in sent_to:
+        if GROUP_CHAT_ID:  # Проверяем, что ID существует
             tasks.append(send_message_or_photo(bot, GROUP_CHAT_ID, spam_message, photo))
             sent_to.add(GROUP_CHAT_ID)
+            logger.info(f"Added task to send to GROUP_CHAT_ID: {GROUP_CHAT_ID}")
 
         # Администраторам отправляем, если им ещё не отправляли
         for admin_id in ADMIN_IDS:
@@ -208,6 +300,14 @@ async def send_spam_alert(
 
     except Exception as e:
         logger.error(f"Error in send_spam_alert: {e}")
+        # Пытаемся отправить базовое сообщение об ошибке
+        try:
+            await bot.send_message(
+                GROUP_CHAT_ID,
+                f"Error sending spam alert: {str(e)}\nMessage ID: {message.message_id}"
+            )
+        except:
+            pass
 
 async def send_message_or_photo(bot: Bot, chat_id: int, text: str, photo) -> None:
     """Вспомогательная функция для отправки сообщения с фото или без"""
@@ -239,8 +339,9 @@ def _build_spam_message(
     reasons: str,
     score: float,
     is_whitelisted: bool = False,
+    profile_analysis: dict = None,  # Добавляем параметр для анализа профиля
 ) -> str:
-    """Формирует текст сообщения �� учетом статуса пользователя"""
+    """Формирует текст сообщения  учетом статуса пользователя"""
     
     # Определяем тип сообщения
     if label == 2:
@@ -264,7 +365,7 @@ def _build_spam_message(
     if text and len(text) > MAX_TEXT_LENGTH:
         text = text[:MAX_TEXT_LENGTH] + "..."
 
-    return (
+    result = (
         f"{label_text} {score_text} {whitelist_status}\n"
         f"Канал: <a href='t.me/{message.chat.username}'>{message.chat.title}</a>\n"
         f"Автор: @{message.from_user.username or 'None'}\n"
@@ -278,9 +379,24 @@ def _build_spam_message(
         f"{'-' * 10}\n"
         f"{escape(user_description)}\n"
         f"{'-' * 10}\n\n"
+    )
+
+    # Добавляем результаты анализа профиля
+    if profile_analysis:
+        result += (
+            f"Анализ профиля:\n"
+            f"{'-' * 10}\n"
+            f"Общая оценка: {profile_analysis.get('overall_score', 0):.2f}\n"
+            f"Особенности:\n{profile_analysis.get('features', 'Нет данных')}\n"
+            f"{'-' * 10}\n\n"
+        )
+
+    result += (
         f"Model: {model_name}\n"
         f"Prompt: {prompt_name}\n"
         f"Time spent: {time_spent:.2f} seconds\n\n"
         f"{reasons}"
     )
+
+    return result
 
