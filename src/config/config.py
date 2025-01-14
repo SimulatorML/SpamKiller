@@ -62,5 +62,12 @@ SCRAPPER_THRESHOLD = 3
 
 API_ID = os.getenv("API_ID")
 API_HASH = os.getenv("API_HASH")
+STRING_SESSION = os.getenv("STRING_SESSION")
 
 GPT_VERSION = "gpt-4o-mini"
+
+GOLDLIST_USERS = (
+    [int(i) for i in os.getenv("GOLDLIST_USERS").split(",")]
+    if os.getenv("GOLDLIST_USERS")
+    else []
+)  # Get goldlist users from env
