@@ -7,31 +7,38 @@ spam_classification_prompt: |
 
   1. Message Content Categories:
   - <spam>: Clear violations like:
+    * Messages with income opportunities, especially combined with links to suspicious bots or external resources.
+    * Use of more than 5 emojis in a row or excessive formatting (e.g., headings in CAPS LOCK with emojis).
     * Unsolicited ads, phishing links, scams
-    * Adult content, religious content
+    * Adult content, religious or offensive content
     * Obvious attempts at harmful activities
-    * Messages containing 6 or more emojis in a row
-    * Messages where emojis make up more than 50% of the content
+    * Messages designed to deceive, harm, or mislead users
+    * Messages containing 5 or more emoji with no meaningful text or context
   - <likely-spam>: Suspicious but not clearly malicious content, such as:
-    * Telegram links without clear context or description
-    * Vague job offers
-    * Excessive use of emojis in promotional context (3-5 emojis)
+    * Messages with vague phrases containing suspicious links but lacking overt advertising or malicious intent.
+    * External Telegram links without context (except links to the current chat or well-known resources like GitHub)
+    * Vague job offers without sufficient details
+    * Excessive self-promotion unrelated to the chat's primary topics
     * Borderline cases of self-promotion
     * Messages encouraging private communication without clear purpose
+    * Excessive emojis in informal or promotional messages (3-5 emojis)
   - <not-spam>: Legitimate content such as:
     * Technical discussions and questions
     * Code sharing and debugging help
-    * Career advice and job discussions with context
-    * Links from recognized sources
-    * General chat and topic-related discussions
-    * Messages with moderate emoji usage (1-2 emojis)
+    * Career advice, well-detailed job offers, or professional discussions
+    * Links from recognized sources, trusted resources (e.g., GitHub, Stepik, YouTube, Habr)
+    * General chat and topic-related discussions with reasonable use of emojis (1-3 emojis)
+    * Messages with positive or friendly context (e.g., gratitude, congratulations, or informal discussions) and moderate use of emojis (up to 3 emojis).
+    * Informal or humorous messages without promotional or harmful intent
+    * Links to the current chat without context
+    * Discussions involving flirting, communication bonuses, or platform usage should not be marked as spam unless they have a clear promotional or harmful intent.
+    * The command /subscription@VibeDatingBot in the "bogdanisssimo_chat" (this is a trusted bot and should never be marked as spam)
 
   Notes:
   - Messages can be in Russian or English and may contain profanity
   - We encourage open discussions about different topics (e.g. technology, economics)
-  - Some messages might be out of context
+  - Some messages might lack context but should not be classified as spam unless harmful intent is evident
   - When in significant doubt, classify as "<not-spam>"
-  - Any message with 6+ consecutive emojis should be marked as <spam>
 
   Detection Procedure:
   For <spam> or <likely-spam>: Provide 1-3 brief reasons (3-9 words each with short example in brackets), starting with "Reasons:\n"
@@ -53,25 +60,32 @@ spam_classification_prompt_karpov_courses: |
 
   1. Message Content Categories:
   - <spam>: Clear violations like:
+    * Messages with income opportunities, especially combined with links to suspicious bots or external resources.
+    * Use of more than 5 emojis in a row or excessive formatting (e.g., headings in CAPS LOCK with emojis)
     * Unsolicited ads or obvious promotional content
     * Phishing links or suspicious Telegram links
     * Scams or fraudulent content
-    * Adult or religious content
-    * Direct attempts to move communication private
+    * Adult content, religious or offensive content
+    * Messages containing 6 or more emoji with no meaningful text or context
   
   - <likely-spam>: Suspicious but not clearly malicious content, such as:
-    * Telegram links without clear context
-    * Vague job offers
+    * Messages with vague phrases containing suspicious links but lacking overt advertising or malicious intent.
+    * Telegram links without clear context (excluding `karpovcourseschat` links)
+    * Vague job offers or self-promotion exceeding moderate context
     * Excessive self-promotion (except Karpov.Courses related)
     * Messages encouraging private communication without clear purpose
     * Borderline promotional content
+    * Excessive emoji use in promotional context (>5 emojis in a row)
 
   - <not-spam>: Legitimate content such as:
     * Any Karpov.Courses related content (questions, enrollment, etc.)
-    * Links containing 'karpov' (e.g., 'https://karpov.courses', '@karpov_anatoly')
+    * Links containing 'karpov' (e.g., 'https://karpov.courses', '@karpov_anatoly', '@karpovcourseschat')
     * Technical discussions and course-related questions
     * Code sharing and debugging help
     * General chat and topic-related discussions
+    * Messages with moderate emoji usage (1-5 emojis)
+    * Messages with positive or friendly context (e.g., gratitude, congratulations, or informal discussions) and moderate use of emojis (up to 3 emojis).
+    * Links to "karpovcourseschat" without context
 
   Notes:
   - Messages can be in Russian or English and may contain profanity
