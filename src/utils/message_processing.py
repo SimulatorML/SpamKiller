@@ -6,7 +6,6 @@ from loguru import logger
 import asyncio
 from src.models.user_analisys import ProfileClassifier
 from datetime import datetime, timedelta
-from src.config import TARGET_GROUP_ID as GROUP_CHAT_ID
 
 # Добавить глобальные переменные для отслеживания состояния
 profile_analyzer_active = False
