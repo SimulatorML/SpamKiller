@@ -9,6 +9,7 @@ from telethon.sync import TelegramClient
 from telethon.tl.functions.users import GetFullUserRequest
 from telethon.tl.functions.stories import GetPeerStoriesRequest
 from telethon.tl.types import InputPeerUser
+import re
 from loguru import logger
 from src.config import (
     API_HASH,
@@ -87,8 +88,9 @@ class ProfileClassifier:
                     await self.client.connect()
                     await asyncio.sleep(1)  # Даем время на подключение
 
-                # Получаем информацию о пользователе и возвращаем её
-                return await self.client(GetFullUserRequest(user_id))
+                # Получаем информацию о пользователе
+                user = await self.client(GetFullUserRequest(user_id))
+                return user
             except Exception as e:
                 logger.error(f"Attempt {attempt + 1}/{max_retries} failed to get user info: {e}")
                 if attempt == max_retries - 1:
@@ -109,9 +111,9 @@ class ProfileClassifier:
                 # Получаем сущность пользователя
                 user_entity = await self._get_user_entity(user_id)
                 
-                # Получаем полную информацию и используем её для логирования
-                user_info = await self.client(GetFullUserRequest(user_entity))
-                logger.info(f"Successfully got user info for {user_id}: {user_info.user.first_name}")
+                # Получаем полную информацию
+                user = await self.client(GetFullUserRequest(user_entity))
+                logger.info(f"Successfully got user info for {user_id}")
                 
             except Exception as e:
                 logger.error(f"Failed to get user info: {e}")

@@ -6,6 +6,7 @@ from loguru import logger
 import asyncio
 from src.models.user_analisys import ProfileClassifier
 from datetime import datetime, timedelta
+from src.config import TARGET_GROUP_ID as GROUP_CHAT_ID
 
 # Добавить глобальные переменные для отслеживания состояния
 profile_analyzer_active = False
@@ -13,21 +14,57 @@ profile_analyzer_start_time = None
 ANALYSIS_DURATION = timedelta(minutes=5)
 
 # Добавить функцию активации анализатора
-async def activate_profile_analyzer():
+async def activate_profile_analyzer(bot=None, chat_id=None):
     global profile_analyzer_active, profile_analyzer_start_time
+    
     profile_analyzer_active = True
     profile_analyzer_start_time = datetime.now()
-    logger.info("Profile analyzer activated for 5 minutes")
+    
+    activation_message = (
+        "🔍 Анализатор профиля активирован\n"
+        f"Будет проводиться углубленный анализ профилей пользователей в течение {ANALYSIS_DURATION.total_seconds() / 60} минут"
+    )
+    logger.info(activation_message)
+    
+    try:
+        if bot:
+            await bot.send_message(
+                chat_id,
+                activation_message
+            )
+            logger.info(f"Activation message sent to chat {chat_id}")
+        else:
+            logger.error("Bot instance not available for sending activation message")
+    except Exception as e:
+        logger.error(f"Failed to send activation message: {e}")
 
 # Добавить функцию проверки состояния анализатора
-def is_profile_analyzer_active():
-    global profile_analyzer_active, profile_analyzer_start_time
+async def is_profile_analyzer_active(bot=None, chat_id=None):
+    global profile_analyzer_active, profile_analyzer_start_time, GROUP_CHAT_ID
+    
     if not profile_analyzer_active:
         return False
     
     if datetime.now() - profile_analyzer_start_time > ANALYSIS_DURATION:
         profile_analyzer_active = False
-        logger.info("Profile analyzer deactivated due to timeout")
+        deactivation_message = (
+            "🔒 Анализатор профиля завершил работу\n"
+            "Углубленный анализ профилей пользователей деактивирован"
+        )
+        logger.info(deactivation_message)
+        
+        try:
+            if bot:
+                await bot.send_message(
+                    chat_id,
+                    deactivation_message
+                )
+                logger.info(f"Deactivation message sent to chat {chat_id}")
+            else:
+                logger.error("Bot instance not available for sending deactivation message")
+        except Exception as e:
+            logger.error(f"Failed to send deactivation message: {e}")
+            
         return False
     
     return True
@@ -71,6 +108,8 @@ async def classify_message(
     WHITELIST_ADMINS: List[int],
     WHITELIST_USERS: List[int],
     GOLDLIST_USERS: List[int],
+    bot=None,
+    chat_id=None,
 ) -> dict:
     text = X.iloc[0, :].text
     user_id = X.iloc[0, :].from_id
@@ -83,17 +122,16 @@ async def classify_message(
         "profile_analysis": None
     }
 
-    # Проверяем, нужно ли анализировать профиль
-    profile_analysis_enabled = is_profile_analyzer_active()
+    # Сначала проверяем goldlist и активируем анализатор если нужно
+    if user_id in GOLDLIST_USERS:
+        await activate_profile_analyzer(bot=bot, chat_id=chat_id)
+        logger.info(f"Profile analyzer activated by goldlist user {user_id}")
+
+    # Теперь проверяем активацию анализатора
+    profile_analysis_enabled = await is_profile_analyzer_active(bot=bot, chat_id=chat_id)
     profile_classifier = None
 
     try:
-        # Проверяем активацию анализатора только для goldlist
-        if user_id in GOLDLIST_USERS:
-            # Если сообщение от пользователя из goldlist, активируем анализатор
-            await activate_profile_analyzer()
-            logger.info(f"Profile analyzer activated by goldlist user {user_id}")
-
         # Проверяем белые списки
         if user_id in admins:
             msg_features["label"] = 0
@@ -306,8 +344,7 @@ async def send_spam_alert(
                 GROUP_CHAT_ID,
                 f"Error sending spam alert: {str(e)}\nMessage ID: {message.message_id}"
             )
-        except Exception as e:
-            logger.error(f"Failed to send error message: {e}")
+        except:
             pass
 
 async def send_message_or_photo(bot: Bot, chat_id: int, text: str, photo) -> None:

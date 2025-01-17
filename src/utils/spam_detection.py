@@ -85,6 +85,8 @@ async def handle_msg_with_args(
             WHITELIST_ADMINS=WHITELIST_ADMINS,
             WHITELIST_USERS=WHITELIST_USERS,
             GOLDLIST_USERS=GOLDLIST_USERS,
+            bot=bot,
+            chat_id=GROUP_CHAT_ID,
         )
 
         # Добавление сообщения в буфер пользователя с временной меткой
