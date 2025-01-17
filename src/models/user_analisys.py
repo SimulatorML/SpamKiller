@@ -9,7 +9,6 @@ from telethon.sync import TelegramClient
 from telethon.tl.functions.users import GetFullUserRequest
 from telethon.tl.functions.stories import GetPeerStoriesRequest
 from telethon.tl.types import InputPeerUser
-import re
 from loguru import logger
 from src.config import (
     API_HASH,
@@ -113,7 +112,7 @@ class ProfileClassifier:
                 
                 # Получаем полную информацию
                 user = await self.client(GetFullUserRequest(user_entity))
-                logger.info(f"Successfully got user info for {user_id}")
+                logger.info(f"Successfully got user info for {user_id}: {user.user.first_name}")
                 
             except Exception as e:
                 logger.error(f"Failed to get user info: {e}")
