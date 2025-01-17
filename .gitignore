@@ -19,4 +19,4 @@ app/mirror_bot.py
 /config
 .DS_store
 .history
-/.venv/
+/.venv/Scrape_user_ids.session-journal

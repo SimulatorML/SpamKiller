@@ -8,6 +8,7 @@ spam_classification_prompt: |
   1. Message Content Categories:
   - <spam>: Clear violations like:
     * Unsolicited ads, phishing links, scams
+<<<<<<< HEAD
     * Direct invitations to religious organizations or religious recruitment
     * Messages containing 3+ emojis in a row without relevant context
     * Messages where emojis make up more than 40% of the content
@@ -21,21 +22,43 @@ spam_classification_prompt: |
     * Messages encouraging private communication without clear purpose
     * Excessive use of emojis (2-3) in promotional context
     
+=======
+    * Adult content, religious content
+    * Obvious attempts at harmful activities
+
+  - <likely-spam>: Suspicious but not clearly malicious content, such as:
+    * Telegram links used in promotional text
+    * Vague job offers
+    * Messages about contemporary military operations and Special Military Operation (21st century)
+    * A message containing two or more lines consisting only of emojis (imitating the structure of the text)
+    * Excessive self-promotion
+    * Messages encouraging private communication without clear purpose
+
+>>>>>>> 0b6daa9e15375f15bcb50e751d93db09c83f5a6f
   - <not-spam>: Legitimate content such as:
     * Technical discussions and questions
     * Code sharing and debugging help
+    * All bot commands and technical interactions
     * Career advice and job discussions with context
     * Links from recognized sources with descriptions
     * General chat and topic-related discussions
+<<<<<<< HEAD
     * Messages with contextual emoji usage (1-2 emojis)
+=======
+    * Messages about free courses related to the discussed topic that seem to be part of a dialogue
+    * Messages can contain: a single emoji string, telegram link
+>>>>>>> 0b6daa9e15375f15bcb50e751d93db09c83f5a6f
 
   Notes:
   - Messages can be in Russian or English
   - We encourage open discussions about different topics (e.g. technology, economics)
   - Some messages might be out of context
   - When in significant doubt, classify as "<not-spam>"
+<<<<<<< HEAD
   - Religious discussions are allowed, but recruitment is not
   - Self-promotion is allowed if it provides clear value and context
+=======
+>>>>>>> 0b6daa9e15375f15bcb50e751d93db09c83f5a6f
 
   Detection Procedure:
   For <spam> or <likely-spam>: Provide 1-3 brief reasons (3-9 words each with short example in brackets), starting with "Reasons:\n"
@@ -62,20 +85,26 @@ spam_classification_prompt_karpov_courses: |
     * Scams or fraudulent content
     * Adult or religious content
     * Direct attempts to move communication private
-  
+
   - <likely-spam>: Suspicious but not clearly malicious content, such as:
-    * Telegram links without clear context
+    * Telegram links used in promotional text
     * Vague job offers
+    * Messages about contemporary military operations and Special Military Operation (21st century)
+    * A message containing two or more lines consisting only of emojis (imitating the structure of the text)
     * Excessive self-promotion (except Karpov.Courses related)
     * Messages encouraging private communication without clear purpose
     * Borderline promotional content
 
   - <not-spam>: Legitimate content such as:
     * Any Karpov.Courses related content (questions, enrollment, etc.)
-    * Links containing 'karpov' (e.g., 'https://karpov.courses', '@karpov_anatoly')
+    * Links containing 'karpov' (e.g., 'https://karpov.courses', '@karpov_anatoly', '@kc_client_service', '@kc_...')
+    * Career advice and job discussions with context
     * Technical discussions and course-related questions
+    * All bot commands and technical interactions
     * Code sharing and debugging help
     * General chat and topic-related discussions
+    * Messages about free courses related to the discussed topic that seem to be part of a dialogue
+    * Messages can contain: a single emoji string, telegram link
 
   Notes:
   - Messages can be in Russian or English and may contain profanity
