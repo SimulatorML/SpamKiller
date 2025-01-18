@@ -344,8 +344,8 @@ async def send_spam_alert(
                 GROUP_CHAT_ID,
                 f"Error sending spam alert: {str(e)}\nMessage ID: {message.message_id}"
             )
-        except:
-            pass
+        except Exception as e:
+            raise Exception(f"Failed to send error message to GROUP_CHAT_ID: {e}")
 
 async def send_message_or_photo(bot: Bot, chat_id: int, text: str, photo) -> None:
     """Вспомогательная функция для отправки сообщения с фото или без"""
