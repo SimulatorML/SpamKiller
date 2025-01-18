@@ -6,7 +6,7 @@ from loguru import logger
 import asyncio
 from src.models.user_analisys import ProfileClassifier
 from datetime import datetime, timedelta
-from src.config import TARGET_GROUP_ID as GROUP_CHAT_ID
+from src.config import TARGET_GROUP_ID
 
 # Добавить глобальные переменные для отслеживания состояния
 profile_analyzer_active = False
@@ -29,10 +29,10 @@ async def activate_profile_analyzer(bot=None, chat_id=None):
     try:
         if bot:
             await bot.send_message(
-                chat_id,
+                chat_id or TARGET_GROUP_ID,  # Используем TARGET_GROUP_ID как fallback
                 activation_message
             )
-            logger.info(f"Activation message sent to chat {chat_id}")
+            logger.info(f"Activation message sent to chat {chat_id or TARGET_GROUP_ID}")
         else:
             logger.error("Bot instance not available for sending activation message")
     except Exception as e:
@@ -345,7 +345,7 @@ async def send_spam_alert(
                 f"Error sending spam alert: {str(e)}\nMessage ID: {message.message_id}"
             )
         except Exception as e:
-            raise Exception(f"Failed to send error message to GROUP_CHAT_ID: {e}")
+            logger.error(f"Failed to send error message to GROUP_CHAT_ID: {e}")
 
 async def send_message_or_photo(bot: Bot, chat_id: int, text: str, photo) -> None:
     """Вспомогательная функция для отправки сообщения с фото или без"""
