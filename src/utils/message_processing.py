@@ -6,6 +6,7 @@ from loguru import logger
 import asyncio
 from src.models.user_analisys import ProfileClassifier
 from datetime import datetime, timedelta
+from src.config import TARGET_GROUP_ID as GROUP_CHAT_ID
 
 # Добавить глобальные переменные для отслеживания состояния
 profile_analyzer_active = False
@@ -26,7 +27,7 @@ async def activate_profile_analyzer(bot=None, chat_id=None):
     logger.info(activation_message)
     
     try:
-        if bot and chat_id:
+        if bot:
             await bot.send_message(
                 chat_id,
                 activation_message
@@ -39,7 +40,7 @@ async def activate_profile_analyzer(bot=None, chat_id=None):
 
 # Добавить функцию проверки состояния анализатора
 async def is_profile_analyzer_active(bot=None, chat_id=None):
-    global profile_analyzer_active, profile_analyzer_start_time
+    global profile_analyzer_active, profile_analyzer_start_time, GROUP_CHAT_ID
     
     if not profile_analyzer_active:
         return False
@@ -53,7 +54,7 @@ async def is_profile_analyzer_active(bot=None, chat_id=None):
         logger.info(deactivation_message)
         
         try:
-            if bot and chat_id:
+            if bot:
                 await bot.send_message(
                     chat_id,
                     deactivation_message
@@ -227,12 +228,12 @@ async def send_spam_alert(
     completion_tokens: int,
     photo,
     user_description: str,
-    target_chat_id: int,
+    GROUP_CHAT_ID: int,
     ADMIN_IDS: List[int],
     TARGET_SPAM_ID: int,
     TARGET_NOT_SPAM_ID: int,
     WHITELIST_USERS: List[int] = None,
-    profile_analysis: dict = None,
+    profile_analysis: dict = None,  # Добавляем параметр для анализа профиля
 ):
     """
     Отправляет уведомление о спаме и удаляет спам-сообщения.
@@ -299,7 +300,7 @@ async def send_spam_alert(
             reasons=reasons,
             score=score,
             is_whitelisted=WHITELIST_USERS and message.from_user.id in WHITELIST_USERS,
-            profile_analysis=profile_analysis
+            profile_analysis=profile_analysis  # Передаем результаты анализа профиля
         )
 
         logger.info(f"Built spam message: {spam_message[:100]}...")  # Логируем начало сообщения
@@ -316,10 +317,10 @@ async def send_spam_alert(
         tasks = []
 
         # В общий чат отправляем всегда
-        if target_chat_id:
-            tasks.append(send_message_or_photo(bot, target_chat_id, spam_message, photo))
-            sent_to.add(target_chat_id)
-            logger.info(f"Added task to send to target_chat_id: {target_chat_id}")
+        if GROUP_CHAT_ID:  # Проверяем, что ID существует
+            tasks.append(send_message_or_photo(bot, GROUP_CHAT_ID, spam_message, photo))
+            sent_to.add(GROUP_CHAT_ID)
+            logger.info(f"Added task to send to GROUP_CHAT_ID: {GROUP_CHAT_ID}")
 
         # Администраторам отправляем, если им ещё не отправляли
         for admin_id in ADMIN_IDS:
@@ -337,13 +338,14 @@ async def send_spam_alert(
 
     except Exception as e:
         logger.error(f"Error in send_spam_alert: {e}")
+        # Пытаемся отправить базовое сообщение об ошибке
         try:
             await bot.send_message(
-                target_chat_id,
+                GROUP_CHAT_ID,
                 f"Error sending spam alert: {str(e)}\nMessage ID: {message.message_id}"
             )
-        except Exception as e:
-            logger.error(f"Failed to send error message: {e}")
+        except:
+            pass
 
 async def send_message_or_photo(bot: Bot, chat_id: int, text: str, photo) -> None:
     """Вспомогательная функция для отправки сообщения с фото или без"""
@@ -375,7 +377,7 @@ def _build_spam_message(
     reasons: str,
     score: float,
     is_whitelisted: bool = False,
-    profile_analysis: dict = None,
+    profile_analysis: dict = None,  # Добавляем параметр для анализа профиля
 ) -> str:
     """Формирует текст сообщения  учетом статуса пользователя"""
     
