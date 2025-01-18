@@ -109,11 +109,8 @@ class ProfileClassifier:
             try:
                 # Получаем сущность пользователя
                 user_entity = await self._get_user_entity(user_id)
-                
-                # Получаем полную информацию
                 user = await self.client(GetFullUserRequest(user_entity))
-                logger.info(f"Successfully got user info for {user_id}")
-                
+                logger.info(f"Successfully got user info for {user_id}. User: {user.full_user}")
             except Exception as e:
                 logger.error(f"Failed to get user info: {e}")
                 return {
@@ -244,8 +241,8 @@ class ProfileClassifier:
                 logger.info(f"Got user entity: {user_entity}")
                 
                 # Получаем имя и фамилию напрямую из сущности
-                first_name = getattr(user_entity, 'first_name', '') or ''
-                last_name = getattr(user_entity, 'last_name', '') or ''
+                first_name = getattr(user_entity, 'first_name', '') or getattr(user_entity.user, 'first_name', '') or ''
+                last_name = getattr(user_entity, 'last_name', '') or getattr(user_entity.user, 'last_name', '') or ''
                 full_name = f"{first_name} {last_name}".strip()
                 
                 logger.info(f"Got full name directly: '{full_name}'")
