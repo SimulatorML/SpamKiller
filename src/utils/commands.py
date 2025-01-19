@@ -4,6 +4,7 @@ from aiogram import types
 from typing import List
 from loguru import logger
 from src.app.loader import message_scrapper
+import os
 
 
 def add_admin_id_to_env(new_id: str, lines: List[str]):
@@ -142,3 +143,124 @@ async def update_whitelist_users(message: types.Message, ADMIN_IDS):
         result_message = "Failed updating whitelist. See logs for more information"
     logger.info(result_message)
     await message.answer(result_message)
+
+
+async def add_to_goldlist(message: types.Message, ADMIN_IDS: List[str]):
+    # Получаем список администраторов чата
+    try:
+        channel_admins_info = await message.bot.get_chat_administrators(message.chat.id)
+        admins = [str(admin.user.id) for admin in channel_admins_info]
+        
+        # Проверяем, является ли отправитель администратором
+        if str(message.from_user.id) not in ADMIN_IDS and str(message.from_user.id) not in admins:
+            await message.answer("Доступ запрещен")
+            return
+
+        user_id = message.text  # Получаем ID из текста сообщения
+        if not user_id or not user_id.isdigit():
+            await message.answer("Некорректный ID пользователя")
+            return
+
+        # Загружаем конфигурацию
+        with open("./config.yml", "r", encoding='utf-8') as f:
+            config = yaml.safe_load(f)
+        
+        if 'goldlist_users' not in config:
+            logger.error("В config.yml отсутствует параметр goldlist_users")
+            await message.answer("Ошибка конфигурации")
+            return
+            
+        path_goldlist_users = config["goldlist_users"]
+        
+        # Создаем директорию, если она не существует
+        os.makedirs(os.path.dirname(path_goldlist_users), exist_ok=True)
+
+        # Читаем существующие ID
+        existing_ids = set()
+        if os.path.exists(path_goldlist_users):
+            with open(path_goldlist_users, "r", encoding='utf-8') as f:
+                existing_ids = set(line.strip() for line in f.readlines() if line.strip())
+
+        # Проверяем, не существует ли уже такой ID
+        if user_id in existing_ids:
+            await message.answer("Пользователь уже в goldlist")
+            return
+
+        # Добавляем новый ID
+        with open(path_goldlist_users, "a", encoding='utf-8') as f:
+            if existing_ids:
+                f.write(f"\n{user_id}")
+            else:
+                f.write(user_id)
+
+        await message.answer(f"Пользователь {user_id} успешно добавлен в goldlist")
+        logger.info(f"Пользователь {user_id} добавлен в goldlist")
+
+    except yaml.YAMLError as e:
+        logger.error(f"Ошибка при чтении config.yml: {e}")
+        await message.answer("Ошибка при чтении конфигурации")
+    except Exception as e:
+        logger.error(f"Ошибка при добавлении в goldlist: {e}")
+        await message.answer("Произошла ошибка при добавлении пользователя")
+
+
+async def delete_from_goldlist(message: types.Message, ADMIN_IDS: List[str]):
+    # Проверяем права администратора
+    try:
+        channel_admins_info = await message.bot.get_chat_administrators(message.chat.id)
+        admins = [str(admin.user.id) for admin in channel_admins_info]
+        
+        if str(message.from_user.id) not in ADMIN_IDS and str(message.from_user.id) not in admins:
+            await message.answer("Доступ запрещен")
+            return
+
+        # Получаем ID из текста сообщения напрямую
+        user_id = message.text
+        if not user_id or not user_id.isdigit():
+            await message.answer("Некорректный ID пользователя")
+            return
+
+        # Загружаем конфигурацию
+        with open("./config.yml", "r", encoding='utf-8') as f:
+            config = yaml.safe_load(f)
+            
+        if 'goldlist_users' not in config:
+            logger.error("В config.yml отсутствует параметр goldlist_users")
+            await message.answer("Ошибка конфигурации")
+            return
+            
+        path_goldlist_users = config["goldlist_users"]
+
+        # Проверяем существование файла
+        if not os.path.exists(path_goldlist_users):
+            await message.answer("Файл goldlist не найден")
+            return
+
+        # Читаем существующие ID
+        with open(path_goldlist_users, "r", encoding='utf-8') as f:
+            existing_ids = [line.strip() for line in f.readlines() if line.strip()]
+
+        # Проверяем, существует ли ID в списке
+        if user_id not in existing_ids:
+            await message.answer("Пользователь не найден в goldlist")
+            return
+
+        # Удаляем ID из списка
+        existing_ids.remove(user_id)
+        
+        # Записываем обновленный список
+        with open(path_goldlist_users, "w", encoding='utf-8') as f:
+            if existing_ids:  # Проверяем, не пустой ли список
+                f.write("\n".join(existing_ids))
+            else:
+                f.write("")  # Записываем пустую строку, если список пуст
+
+        await message.answer(f"Пользователь {user_id} успешно удален из goldlist")
+        logger.info(f"Пользователь {user_id} удален из goldlist")
+
+    except yaml.YAMLError as e:
+        logger.error(f"Ошибка при чтении config.yml: {e}")
+        await message.answer("Ошибка при чтении конфигурации")
+    except Exception as e:
+        logger.error(f"Ошибка при удалении из goldlist: {e}")
+        await message.answer("Произошла ошибка при удалении пользователя")

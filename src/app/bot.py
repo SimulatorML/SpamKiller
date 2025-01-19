@@ -21,7 +21,9 @@ class SpamKiller:
             types.BotCommand("add_id", "Add new admin"),
             types.BotCommand("del_id", "Delete admin"),
             types.BotCommand("update_whitelist", "Parse X messages in channel and add users with Y or more messages.\n"
-                                                 "Example: channel X Y")
+                                                 "Example: channel X Y"),
+            types.BotCommand("add_goldlist", "Добавить пользователя в goldlist"),
+            types.BotCommand("del_goldlist", "Удалить пользователя из goldlist")
         ])
 
     async def _on_shutdown(self, dp):

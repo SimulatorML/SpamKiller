@@ -24,13 +24,13 @@ spam_classification_prompt: |
     * Code sharing and debugging help
     * All bot commands and technical interactions
     * Career advice and job discussions with context
-    * Links from recognized sources
+    * Links from recognized sources with descriptions
     * General chat and topic-related discussions
     * Messages about free courses related to the discussed topic that seem to be part of a dialogue
     * Messages can contain: a single emoji string, telegram link
 
   Notes:
-  - Messages can be in Russian or English and may contain profanity
+  - Messages can be in Russian or English
   - We encourage open discussions about different topics (e.g. technology, economics)
   - Some messages might be out of context
   - When in significant doubt, classify as "<not-spam>"

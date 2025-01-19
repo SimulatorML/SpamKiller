@@ -40,13 +40,19 @@ AUTHORIZED_GROUP_IDS = (
     else []
 )  # Get admin id from environment variable (in .env file)
 
-# Get whitelist users
+# Get whitelist and goldlist paths from config.yml
 with open("./config.yml", "r") as f:
     config = yaml.safe_load(f)
     path_whitelist_users = config["whitelist_users"]
+    path_goldlist_users = config["goldlist_users"]
 
+# Get whitelist users from file
 with open(path_whitelist_users, "r") as file:
-    WHITELIST_USERS = [int(user_id.strip()) for user_id in file.readlines()]
+    WHITELIST_USERS = [int(user_id.strip()) for user_id in file.readlines() if user_id.strip()]
+
+# Get goldlist users from file
+with open(path_goldlist_users, "r") as file:
+    GOLDLIST_USERS = [int(user_id.strip()) for user_id in file.readlines() if user_id.strip()]
 
 OPENAI_COMPLETION_OPTIONS = {
     "temperature": 0.2,
@@ -62,5 +68,6 @@ SCRAPPER_THRESHOLD = 3
 
 API_ID = os.getenv("API_ID")
 API_HASH = os.getenv("API_HASH")
+STRING_SESSION = os.getenv("STRING_SESSION")
 
 GPT_VERSION = "gpt-4o-mini"
