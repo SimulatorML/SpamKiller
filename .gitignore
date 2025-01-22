@@ -20,3 +20,4 @@ app/mirror_bot.py
 .DS_store
 .history
 /.venv/Scrape_user_ids.session-journal
+.idea/
