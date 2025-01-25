@@ -49,7 +49,6 @@ async def handle_update_whitelist(message: types.Message, state: FSMContext):
     await state.set_state(UPDATE_STATE)
     await message.answer("Please enter the channel name and message count (optional)")
 
-
 @dp.message_handler(ChatTypeFilter(types.ChatType.PRIVATE), commands=["add_goldlist"])
 async def handle_add_goldlist(message: types.Message, state: FSMContext):
     if str(message.from_user.id) not in ADMIN_IDS:
@@ -66,6 +65,12 @@ async def handle_delete_goldlist(message: types.Message, state: FSMContext):
         return
     await state.set_state(DEL_GOLDLIST_STATE)
     await message.answer("Пожалуйста, введите ID пользователя для удаления из goldlist")
+
+# обработчик для ЛС c ботом
+@dp.message_handler(ChatTypeFilter(types.ChatType.PRIVATE))
+async def handle_private_messages(message: types.Message):
+    if message.text and not message.text.startswith('/'):
+        await message.answer("Я обрабатываю только команды. Используйте меню для вызова команд")
 
 
 # --- Обработка состояний ТОЛЬКО в ЛС ---

@@ -148,11 +148,11 @@ async def update_whitelist_users(message: types.Message, ADMIN_IDS):
 async def add_to_goldlist(message: types.Message, ADMIN_IDS: List[str]):
     # Получаем список администраторов чата
     try:
-        channel_admins_info = await message.bot.get_chat_administrators(message.chat.id)
-        admins = [str(admin.user.id) for admin in channel_admins_info]
+        # channel_admins_info = await message.bot.get_chat_administrators(message.chat.id)
+        # admins = [str(admin.user.id) for admin in channel_admins_info]
         
         # Проверяем, является ли отправитель администратором
-        if str(message.from_user.id) not in ADMIN_IDS and str(message.from_user.id) not in admins:
+        if str(message.from_user.id) not in ADMIN_IDS: #and str(message.from_user.id) not in admins
             await message.answer("Доступ запрещен")
             return
 
@@ -207,10 +207,10 @@ async def add_to_goldlist(message: types.Message, ADMIN_IDS: List[str]):
 async def delete_from_goldlist(message: types.Message, ADMIN_IDS: List[str]):
     # Проверяем права администратора
     try:
-        channel_admins_info = await message.bot.get_chat_administrators(message.chat.id)
-        admins = [str(admin.user.id) for admin in channel_admins_info]
+        # channel_admins_info = await message.bot.get_chat_administrators(message.chat.id)
+        # admins = [str(admin.user.id) for admin in channel_admins_info]
         
-        if str(message.from_user.id) not in ADMIN_IDS and str(message.from_user.id) not in admins:
+        if str(message.from_user.id) not in ADMIN_IDS: #and str(message.from_user.id) not in admins
             await message.answer("Доступ запрещен")
             return
 
