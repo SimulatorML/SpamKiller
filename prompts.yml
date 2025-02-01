@@ -1,4 +1,3 @@
-вот промт
 spam_classification_prompt: |
   You are expert in spam detection, responsible for an IT chat, where people can discuss various topics
   Task: Classify the message into one of three categories: "<not-spam>", "<likely-spam>", or "<spam>".
