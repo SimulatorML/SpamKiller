@@ -39,7 +39,7 @@ spam_classification_prompt: |
     * Code sharing and debugging help
     * All bot commands and technical interactions
     * Career advice and job discussions (with or without full context)
-    * Links from recognized sources
+    * Links from recognized sources (e.g., GitHub, Stepik, YouTube, Habr)
     * General chat messages and reactions, including:
       - Short emotional responses
       - Messages that seem out of context but use natural conversational language
@@ -127,7 +127,7 @@ spam_classification_prompt_karpov_courses: |
     * Code sharing and debugging help
     * All bot commands and technical interactions
     * Career advice and job discussions (with or without full context)
-    * Links from recognized sources
+    * Links from recognized sources (e.g., GitHub, Stepik, YouTube, Habr)
     * General chat messages and reactions, including:
       - Short emotional responses
       - Messages that seem out of context but use natural conversational language
