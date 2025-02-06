@@ -7,9 +7,9 @@ spam_classification_prompt: |
   1. Message Content Categories:
   - <spam>: Clear violations like:
     * Job scam patterns:
-      - Vague remote work offers with specific earnings ("$80-100 per day", "from $1100 to $1700 per week")
+      - Work offers with specific earnings ("$80-100 per day", "from $1100 to $1700 per week")
       - Mentions of "1-2 hours per day" workload
-      - Requests to DM for details
+      - Private message requests for detailed information
       - Minimal requirements ("phone/PC and internet")
 
     * Crypto scam patterns:
@@ -19,7 +19,7 @@ spam_classification_prompt: |
       - Urgent calls to action ("Don't miss your chance")
 
     * Personal data theft services:
-      - "Eye of God" and similar services
+      - "Eye of God" and similar services (t.me/glaz...)
       - Promises to find personal/intimate photos
       - Claims of access to private databases
       - Social media "probiv" (personal data lookup) services
@@ -34,6 +34,7 @@ spam_classification_prompt: |
     * Hints of violent actions
 
   - <not-spam>: Legitimate content such as:
+    * Simple statements or open questions about technologies
     * Technical discussions and questions (even without full context)
     * Code sharing and debugging help
     * All bot commands and technical interactions
@@ -86,9 +87,9 @@ spam_classification_prompt_karpov_courses: |
   1. Message Content Categories:
   - <spam>: Clear violations like:
     * Job scam patterns:
-      - Vague remote work offers with specific earnings ("$80-100 per day", "from $1100 to $1700 per week")
+      - Work offers with specific earnings ("$80-100 per day", "from $1100 to $1700 per week")
       - Mentions of "1-2 hours per day" workload
-      - Requests to DM for details
+      - Private message requests for detailed information
       - Minimal requirements ("phone/PC and internet")
 
     * Crypto scam patterns:
@@ -98,7 +99,7 @@ spam_classification_prompt_karpov_courses: |
       - Urgent calls to action ("Don't miss your chance")
 
     * Personal data theft services:
-      - "Eye of God" and similar services
+      - "Eye of God" and similar services (t.me/glaz...)
       - Promises to find personal/intimate photos
       - Claims of access to private databases
       - Social media "probiv" (personal data lookup) services
@@ -111,17 +112,17 @@ spam_classification_prompt_karpov_courses: |
 
   - <likely-spam>: Suspicious but not clearly malicious content, such as:
     * Telegram links used in promotional text
-    * Vague job offers
     * Messages about contemporary military operations and Special Military Operation (21st century)
     * A message where two or more separate lines consist ONLY of emojis (e.g., "😊😊😊\n💪💪💪")
     * Excessive self-promotion (except Karpov.Courses related)
     * Messages encouraging private communication without clear purpose or containing sexual innuendos
-    * Borderline promotional content
+    * Promotional content
     * Hints of violent actions
 
   - <not-spam>: Legitimate content such as:
     * Any Karpov.Courses related content (questions, enrollment, etc.)
     * Links containing 'karpov' (e.g., 'https://karpov.courses', '@karpov_anatoly', '@kc_client_service', '@kc_...')
+    * Simple statements or open questions about technologies
     * Technical discussions and questions (even without full context)
     * Code sharing and debugging help
     * All bot commands and technical interactions
