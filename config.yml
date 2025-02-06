@@ -21,4 +21,4 @@ path_not_spam_id: data/rules_base_model/not_spam_id.csv
 words_fuzzy_not_enough: data/rules_base_model/words_fuzzy_not_enough.csv
 whitelist_users: data/rules_base_model/whitelist_users.txt
 whitelist_urls: data/rules_base_model/whitelist_urls.csv
-goldlist_users: goldlist/goldlist_users.txt
+goldlist_users: data/rules_base_model/goldlist_users.txt
