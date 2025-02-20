@@ -36,13 +36,60 @@ async def handle_msg_with_args(
         TARGET_NOT_SPAM_ID,
         WHITELIST_ADMINS,
 ):
-    # Добавим логирование для отладки
     logger.info(f"Starting message processing for user {message.from_id}")
 
     try:
+        # Обработка форвард-сообщений и историй
+        forward_info = ""
+        is_story = False
+        story_caption = ""
+        
+        # Определяем photo в начале функции
+        photo = None
+        if message.photo:
+            photo = message.photo[-1].file_id
+        
+        if message.forward_from or message.forward_from_chat:
+            if message.forward_from:
+                forward_info = f"Forwarded from user @{message.forward_from.username or 'Unknown'} (ID: {message.forward_from.id})"
+            elif message.forward_from_chat:
+                forward_info = f"Forwarded from chat {message.forward_from_chat.title} (ID: {message.forward_from_chat.id})"
+            
+            # Улучшенная проверка на историю
+            if getattr(message, 'forward_from_story', None):
+                is_story = True
+                forward_info += " [STORY]"
+                
+                # Получаем caption истории
+                if hasattr(message.forward_from_story, 'caption'):
+                    story_caption = message.forward_from_story.caption or ""
+                # Дополнительно проверяем caption в самом сообщении
+                elif message.caption:
+                    story_caption = message.caption
+                
+                logger.info(f"Story detected. Caption: {story_caption}")
+        
+        # Добавляем информацию о форварде и caption истории к тексту для анализа
+        original_text = message.text or message.caption or ""
+        text = original_text
+        
+        if forward_info:
+            text += f"\n[{forward_info}]"
+        
+        if story_caption:
+            text += f"\n[Story caption: {story_caption}]"
+            logger.info(f"Final text with story caption: {text}")
+
         # Сбор данных
-        photo = message.photo[-1].file_id if message.photo else None
-        text = message.text or message.caption or ""
+        media_type = None
+        media_id = None
+        
+        if message.photo:
+            media_type = "photo"
+            media_id = message.photo[-1].file_id
+        elif message.video:
+            media_type = "video"
+            media_id = message.video.file_id
         
         # Получение информации о пользователе
         try:
@@ -52,24 +99,20 @@ async def handle_msg_with_args(
             logger.error(f"Failed to get user info: {e}")
             user_description = ""
 
-        reply_to_message_id = (
-            message.reply_to_message.message_id if message.reply_to_message else None
-        )
-        channel = message.chat.username
-
-        spoiler_link, hidden_link = extract_entities(message=message)
-
-        text = text[:550]
-        text += spoiler_link
-        text += hidden_link
-
+        # Добавляем дополнительные признаки для форвард-сообщений и историй
         X = build_data_frame(
             text=text,
             bio=user_description,
             from_id=message.from_id,
-            photo=photo,
-            reply_to_message_id=reply_to_message_id,
-            channel=channel,
+            media_type=media_type,
+            media_id=media_id,
+            story_caption=story_caption,
+            reply_to_message_id=message.reply_to_message.message_id if message.reply_to_message else None,
+            channel=message.chat.username,
+            is_forwarded=bool(message.forward_from or message.forward_from_chat),
+            is_story=is_story,
+            forward_from_id=message.forward_from.id if message.forward_from else None,
+            forward_from_chat_id=message.forward_from_chat.id if message.forward_from_chat else None,
         )
 
         channel_admins_info = await bot.get_chat_administrators(message.chat.id)
@@ -152,7 +195,7 @@ async def handle_msg_with_args(
             time_spent=msg_features.get("time_spent", 0.0),
             prompt_tokens=msg_features.get("prompt_tokens", 0),
             completion_tokens=msg_features.get("completion_tokens", 0),
-            photo=photo,
+            photo=photo,  # Передаем определенную переменную photo
             user_description=user_description,
             GROUP_CHAT_ID=GROUP_CHAT_ID,
             ADMIN_IDS=ADMIN_IDS,

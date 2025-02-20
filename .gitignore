@@ -21,3 +21,7 @@ app/mirror_bot.py
 .history
 /.venv/Scrape_user_ids.session-journal
 .idea/workspace.xml
+Scrape_user*
+
+
+

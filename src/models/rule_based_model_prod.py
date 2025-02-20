@@ -98,15 +98,30 @@ class RuleBasedClassifier:
         """
 
         logger.info("Predicting...")
-        total_score = 0.0
-        name_features = ""
-        for rule in self.rules:
-            temp_score, temp_name_features = rule["check"](X.iloc[0, :])
-            total_score += temp_score
-            name_features += temp_name_features
-        total_score_normalized = self._normalize_score(total_score, threshold=0.7)
+        total_score = 0
+        total_feature = ""
+        
+        # Добавляем проверку форвард-сообщений
+        score, feature = self._check_forward_spam(X.iloc[0])
+        total_score += score
+        total_feature += feature
+        
+        # Существующие проверки
+        for check_method in [
+            self._check_contains_telegram_link,
+            self._check_contains_stop_word,
+            self._check_contains_dangerous_words,
+            self._check_contains_spam_words,
+            self._check_contains_cyrillic_spoofing,
+            self._contains_emoji,
+            self._check_special_characters,
+            self._check_not_spam_id,
+        ]:
+            score, feature = check_method(X.iloc[0])
+            total_score += score
+            total_feature += feature
 
-        return total_score_normalized, name_features
+        return self._normalize_score(total_score), total_feature
 
     def _normalize_score(self, score, threshold = 0.8):
         """
@@ -464,3 +479,121 @@ class RuleBasedClassifier:
             feature = "[+0.3] - В сообщении содержится несколько ссылок\n"
 
         return score, feature
+
+    def _check_forward_spam(self, message):
+        """
+        Проверяет форвард-сообщения и истории на признаки спама.
+        """
+        score = 0.0
+        feature = ""
+        
+        # Если это форвард
+        if message.get("is_forwarded"):
+            # Базовый скор за форвард
+            score += 0.1
+            feature += "[+0.1] - Сообщение переслано\n"
+            
+            # Если это история
+            if message.get("is_story"):
+                score += 0.2
+                feature += "[+0.2] - Переслана история\n"
+            
+            # Проверяем ID источника форварда
+            forward_from_id = message.get("forward_from_id")
+            forward_from_chat_id = message.get("forward_from_chat_id")
+            
+            # Если источник форварда неизвестен или скрыт
+            if not forward_from_id and not forward_from_chat_id:
+                score += 0.2
+                feature += "[+0.2] - Источник форварда скрыт\n"
+            
+            # Проверяем текст на спам-признаки более строго для форвард-сообщений
+            text = message.get("text", "").lower()
+            if any(word in text for word in self.spam_words):
+                # Повышенный скор для историй
+                if message.get("is_story"):
+                    score += 0.4
+                    feature += "[+0.4] - История содержит спам-слова\n"
+                else:
+                    score += 0.3
+                    feature += "[+0.3] - Форвард содержит спам-слова\n"
+            
+        return score, feature
+
+    def _check_story_content(self, message):
+        """
+        Проверяет содержимое истории на признаки спама
+        """
+        score = 0.0
+        feature = ""
+        
+        if message.get("is_story"):
+            # Проверяем caption истории
+            story_caption = message.get("story_caption", "").lower()
+            if story_caption:
+                # Проверка на спам-слова
+                for word in self.spam_words:
+                    if word.lower() in story_caption:
+                        score += 0.3
+                        feature += f'[+0.3] - В описании истории найдено спам-слово "{word}"\n'
+                
+                # Проверка на ссылки
+                link_pattern = re.compile(
+                    r"https?:\/\/(?:t\.me|telegra\.ph)\/[^\s]+|"  # обычные http и https ссылки
+                    r"@[\w\d_]+|"  # @username формат
+                    r"t\.me/\S+|"  # t.me ссылки
+                    r"t\.me/joinchat/\S+|"  # t.me ссылки на группы
+                    r"telegra\.ph/\S+"  # telegraph ссылки
+                )
+                
+                links = link_pattern.findall(story_caption)
+                if links:
+                    if story_caption.strip() == links[0]:
+                        score += 0.4
+                        feature += "[+0.4] - Описание истории содержит только ссылку\n"
+                    elif len(links) >= 2:
+                        score += 0.4
+                        feature += "[+0.4] - Описание истории содержит несколько ссылок\n"
+                    else:
+                        score += 0.2
+                        feature += "[+0.2] - Описание истории содержит ссылку\n"
+        
+            # Проверка на тип медиа
+            media_type = message.get("media_type")
+            if media_type == "photo":
+                score += 0.1
+                feature += "[+0.1] - История содержит фото\n"
+            elif media_type == "video":
+                score += 0.1
+                feature += "[+0.1] - История содержит видео\n"
+    
+        return score, feature
+
+    def check_message(self, message):
+        """
+        Основной метод проверки сообщения
+        """
+        total_score = 0.0
+        total_feature = ""
+        
+        # Добавляем проверку историй к существующим проверкам
+        story_score, story_feature = self._check_story_content(message)
+        total_score += story_score
+        total_feature += story_feature
+        
+        # Существующие проверки
+        for check_method in [
+            self._check_contains_telegram_link,
+            self._check_contains_stop_word,
+            self._check_contains_dangerous_words,
+            self._check_contains_spam_words,
+            self._check_contains_cyrillic_spoofing,
+            self._contains_emoji,
+            self._check_special_characters,
+            self._check_not_spam_id,
+        ]:
+            score, feature = check_method(message)
+            total_score += score
+            total_feature += feature
+
+        return total_score, total_feature

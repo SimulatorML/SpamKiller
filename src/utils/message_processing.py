@@ -1,6 +1,6 @@
 import pandas as pd
 from html import escape
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 from aiogram import types, Bot
 from loguru import logger
 import asyncio
@@ -86,18 +86,38 @@ def extract_entities(message: types.Message) -> Tuple[str, str]:
     return spoiler_link, hidden_link
 
 def build_data_frame(
-    text: str, bio: str, from_id: int, photo, reply_to_message_id, channel: str
+    text: str,
+    bio: str,
+    from_id: int,
+    media_type: Optional[str],
+    media_id: Optional[str],
+    story_caption: str,
+    reply_to_message_id: int,
+    channel: str,
+    is_forwarded: bool = False,
+    is_story: bool = False,
+    forward_from_id: Optional[int] = None,
+    forward_from_chat_id: Optional[int] = None,
 ) -> pd.DataFrame:
+    """
+    Создает DataFrame для анализа сообщения.
+    """
     data = {
-        "text": [text],
-        "bio": [bio],
-        "from_id": [from_id],
-        "photo": [photo],
-        "reply_to_message_id": [reply_to_message_id],
-        "channel": [channel],
+        'text': [text],
+        'bio': [bio],
+        'from_id': [from_id],
+        'media_type': [media_type],
+        'media_id': [media_id],
+        'story_caption': [story_caption],  # Убедитесь, что это поле используется при анализе
+        'reply_to_message_id': [reply_to_message_id],
+        'channel': [channel],
+        'is_forwarded': [is_forwarded],
+        'is_story': [is_story],
+        'forward_from_id': [forward_from_id],
+        'forward_from_chat_id': [forward_from_chat_id]
     }
-    data = pd.DataFrame(data)
-    return data
+    
+    return pd.DataFrame(data)
 
 async def classify_message(
     X: pd.DataFrame,
